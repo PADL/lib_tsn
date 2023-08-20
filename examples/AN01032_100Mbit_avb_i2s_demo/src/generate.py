@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 import sys
 import re
 import string
@@ -57,6 +59,6 @@ def main():
 
     do_replace(read_file, write_file, 1)
 
-    print "AEM descriptor header file generation complete"
+    print("AEM descriptor header file generation complete")
 
 main()
