@@ -270,7 +270,8 @@ static void update_media_clock_divide(media_clock_t &clk)
 
 static void init_media_clock(media_clock_t &clk,
                              timer tmr,
-                             out buffered port:32 p) {
+                             out buffered port:32 p
+) {
   int ptime, time;
   clk.info.active = 0;
   clk.count = 0;
@@ -289,7 +290,8 @@ static void init_media_clock(media_clock_t &clk,
 
 
 static void do_media_clock_output(media_clock_t &clk,
-                                  out buffered port:32 p)
+                                  out buffered port:32 p
+)
 {
   const unsigned int one = (1 << WC_FRACTIONAL_BITS);
   const unsigned mult = PLL_TO_WORD_MULTIPLIER/(2*INTERNAL_CLOCK_DIVIDE);
@@ -354,7 +356,6 @@ void gptp_media_clock_server(server interface media_clock_if media_clock_ctl,
 #endif
   timer clk_timers[AVB_NUM_MEDIA_CLOCKS];
   unsigned fifo_init_count = AVB_NUM_MEDIA_OUTPUTS;
-
 
 #if COMBINE_MEDIA_CLOCK_AND_PTP
   ptp_server_init(i_eth_cfg, i_eth_rx, c_ptp[0], server_type, tmr, ptp_timeout);
@@ -481,8 +482,6 @@ void gptp_media_clock_server(server interface media_clock_if media_clock_ctl,
                                     media_clocks[clock_num].info.rate);
         }
         break;
-
-
       }
   }
 }

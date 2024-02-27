@@ -242,27 +242,34 @@ static int create_aem_read_descriptor_response(unsigned int read_type,
         strcpy((char *)cluster->object_name, "Channel ");
         generate_object_name((char *)cluster->object_name, id, 0);
       }
+#if AVB_NUM_SOURCES > 0
       else {
         strcpy((char *)cluster->object_name, "Output ");
         generate_object_name((char *)cluster->object_name, id, AVB_NUM_MEDIA_INPUTS/AVB_NUM_SOURCES);
       }
+#endif
     }
+#if AVB_NUM_SINKS > 0
     else if (read_type == AEM_STREAM_INPUT_TYPE)
     {
       memset(cluster->object_name, 0, 64);
       strcpy((char *)cluster->object_name, "Input ");
       generate_object_name((char *)cluster->object_name, (int)id_num, AVB_NUM_MEDIA_OUTPUTS/AVB_NUM_SINKS);
     }
-
+#endif
     if (read_type == AEM_STREAM_PORT_OUTPUT_TYPE) {
+#if AVB_NUM_SOURCES > 0
       aem_desc_stream_port_input_output_t *stream_port = (aem_desc_stream_port_input_output_t *)descriptor;
       hton_16(stream_port->base_cluster, AVB_NUM_MEDIA_OUTPUTS + (read_id * AVB_NUM_MEDIA_INPUTS/AVB_NUM_SOURCES));
       hton_16(stream_port->base_map, AVB_NUM_SOURCES + read_id);
+#endif
     }
     else if (read_type == AEM_STREAM_PORT_INPUT_TYPE) {
+#if AVB_NUM_SINKS > 0
       aem_desc_stream_port_input_output_t *stream_port = (aem_desc_stream_port_input_output_t *)descriptor;
       hton_16(stream_port->base_cluster, read_id * AVB_NUM_MEDIA_OUTPUTS/AVB_NUM_SINKS);
       hton_16(stream_port->base_map, read_id);
+#endif
     }
 
     found_descriptor = 1;
