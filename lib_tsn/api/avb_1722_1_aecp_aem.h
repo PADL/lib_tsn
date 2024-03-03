@@ -2,6 +2,8 @@
 #ifndef AVB_1722_1_AECP_AEM_H_
 #define AVB_1722_1_AECP_AEM_H_
 
+#include <inttypes.h>
+
 #include "avb_1722_1_protocol.h"
 #include "avb_1722_1_default_conf.h"
 
@@ -89,25 +91,25 @@ typedef enum {
 /* 7.4.2.1. READ_DESCRIPTOR Command Format */
 
 typedef struct {
-    unsigned char configuration[2];
-    unsigned char reserved[2];
-    unsigned char descriptor_type[2];
-    unsigned char descriptor_id[2];
+    uint8_t configuration[2];
+    uint8_t reserved[2];
+    uint8_t descriptor_type[2];
+    uint8_t descriptor_id[2];
 } avb_1722_1_aem_read_descriptor_command_t;
 
 /* 7.4.2.2. READ_DESCRIPTOR Response Format */
 typedef struct {
-    unsigned char configuration[2];
-    unsigned char reserved[2];
-    unsigned char descriptor[512];
+    uint8_t configuration[2];
+    uint8_t reserved[2];
+    uint8_t descriptor[512];
 } avb_1722_1_aem_read_descriptor_response_t;
 
 /* 7.4.1. ACQUIRE_ENTITY Command */
 typedef struct {
-    unsigned char flags[4];
-    unsigned char owner_guid[8];
-    unsigned char descriptor_type[2];
-    unsigned char descriptor_id[2];
+    uint8_t flags[4];
+    uint8_t owner_guid[8];
+    uint8_t descriptor_type[2];
+    uint8_t descriptor_id[2];
 } avb_1722_1_aem_acquire_entity_command_t;
 
 #define AEM_ACQUIRE_ENTITY_PERSISTENT_FLAG(cmd)     ((cmd)->flags[3] & 1)
@@ -115,47 +117,47 @@ typedef struct {
 
 /* 7.4.2. LOCK_ENTITY Command */
 typedef struct {
-    unsigned char flags[4];
-    unsigned char locked_guid[8];
+    uint8_t flags[4];
+    uint8_t locked_guid[8];
 } avb_1722_1_aem_lock_entity_command_t;
 
 /* 7.4.40.1 GET_AVB_INFO Command */
 typedef struct {
-    unsigned char descriptor_type[2];
-    unsigned char descriptor_id[2];
+    uint8_t descriptor_type[2];
+    uint8_t descriptor_id[2];
 } avb_1722_1_aem_get_avb_info_command_t;
 
 /* 7.4.40.2 GET_AVB_INFO Response */
 typedef struct {
-    unsigned char descriptor_type[2];
-    unsigned char descriptor_id[2];
-    unsigned char as_grandmaster_id[8];
-    unsigned char propagation_delay[4];
-    unsigned char reserved[2];
-    unsigned char msrp_mappings_count[2];
-    unsigned char msrp_mappings[4];
+    uint8_t descriptor_type[2];
+    uint8_t descriptor_id[2];
+    uint8_t as_grandmaster_id[8];
+    uint8_t propagation_delay[4];
+    uint8_t reserved[2];
+    uint8_t msrp_mappings_count[2];
+    uint8_t msrp_mappings[4];
 } avb_1722_1_aem_get_avb_info_response_t;
 
 /* 7.4.9.1 SET_STREAM_FORMAT Command/response */
 typedef struct {
-    unsigned char descriptor_type[2];
-    unsigned char descriptor_id[2];
-    unsigned char stream_format[8];
+    uint8_t descriptor_type[2];
+    uint8_t descriptor_id[2];
+    uint8_t stream_format[8];
 } avb_1722_1_aem_getset_stream_format_t;
 
 /* 7.4.22. SET_SAMPLING_RATE Command/Response */
 typedef struct {
-    unsigned char descriptor_type[2];
-    unsigned char descriptor_id[2];
-    unsigned char sampling_rate[4];
+    uint8_t descriptor_type[2];
+    uint8_t descriptor_id[2];
+    uint8_t sampling_rate[4];
 } avb_1722_1_aem_getset_sampling_rate_t;
 
 /* 7.4.23. SET_CLOCK_SOURCE Command/Response */
 typedef struct {
-    unsigned char descriptor_type[2];
-    unsigned char descriptor_id[2];
-    unsigned char clock_source_index[2];
-    unsigned char reserved[2];
+    uint8_t descriptor_type[2];
+    uint8_t descriptor_id[2];
+    uint8_t clock_source_index[2];
+    uint8_t reserved[2];
 } avb_1722_1_aem_getset_clock_source_t;
 
 #define AECP_STREAM_INFO_FLAGS_STREAM_VLAN_ID_VALID     (0x02000000)
@@ -168,44 +170,44 @@ typedef struct {
 
 /* 7.4.15.1. SET_STREAM_INFO Command/Response */
 typedef struct {
-    unsigned char descriptor_type[2];
-    unsigned char descriptor_id[2];
-    unsigned char flags[4];
-    unsigned char stream_format[8];
-    unsigned char stream_id[8];
-    unsigned char msrp_accumulated_latency[4];
-    unsigned char stream_dest_mac[6];
-    unsigned char msrp_failure_code;
-    unsigned char reserved1;
-    unsigned char msrp_failure_bridge_id[8];
-    unsigned char stream_vlan_id[2];
-    unsigned char reserved2[2];
+    uint8_t descriptor_type[2];
+    uint8_t descriptor_id[2];
+    uint8_t flags[4];
+    uint8_t stream_format[8];
+    uint8_t stream_id[8];
+    uint8_t msrp_accumulated_latency[4];
+    uint8_t stream_dest_mac[6];
+    uint8_t msrp_failure_code;
+    uint8_t reserved1;
+    uint8_t msrp_failure_bridge_id[8];
+    uint8_t stream_vlan_id[2];
+    uint8_t reserved2[2];
 } avb_1722_1_aem_getset_stream_info_t;
 
 #define AEM_MAX_CONTROL_VALUES_LENGTH_BYTES 508
 
 /* 7.4.25.1 SET_CONTROL */
 typedef struct {
-    unsigned char descriptor_type[2];
-    unsigned char descriptor_id[2];
+    uint8_t descriptor_type[2];
+    uint8_t descriptor_id[2];
 } avb_1722_1_aem_getset_control_t;
 
 /* 7.4.29 SET_SIGNAL_SELECTOR */
 typedef struct {
-    unsigned char descriptor_type[2];
-    unsigned char descriptor_id[2];
-    unsigned char signal_type[2];
-    unsigned char signal_index[2];
-    unsigned char signal_output[2];
-    unsigned char reserved[2];
+    uint8_t descriptor_type[2];
+    uint8_t descriptor_id[2];
+    uint8_t signal_type[2];
+    uint8_t signal_index[2];
+    uint8_t signal_output[2];
+    uint8_t reserved[2];
 } avb_1722_1_aem_getset_signal_selector_t;
 
 /* 7.4.42 GET_COUNTERS */
 typedef struct {
-    unsigned char descriptor_type[2];
-    unsigned char descriptor_id[2];
-    unsigned char counters_valid[4];
-    unsigned char counters_block[128];
+    uint8_t descriptor_type[2];
+    uint8_t descriptor_id[2];
+    uint8_t counters_valid[4];
+    uint8_t counters_block[128];
 } avb_1722_1_aem_get_counters_t;
 
 #define AECP_GET_COUNTERS_CLOCK_DOMAIN_LOCKED_VALID     (0x00000001)
@@ -216,31 +218,30 @@ typedef struct {
 
 /* 7.4.35.1 START_STREAMING */
 typedef struct {
-    unsigned char descriptor_type[2];
-    unsigned char descriptor_id[2];
+    uint8_t descriptor_type[2];
+    uint8_t descriptor_id[2];
 } avb_1722_1_aem_startstop_streaming_t;
 
 /* 7.4.39.1 IDENTIFY_NOTIFICATION */
 typedef struct {
-    unsigned char descriptor_type[2];
-    unsigned char descriptor_index[2];
+    uint8_t descriptor_type[2];
+    uint8_t descriptor_index[2];
 } avb_1722_1_aem_identify_notification_t;
 
 /* 7.4.53 START_OPERATION Command */
 typedef struct {
-    unsigned char descriptor_type[2];
-    unsigned char descriptor_id[2];
-    unsigned char operation_id[2];
-    unsigned char operation_type[2];
+    uint8_t descriptor_type[2];
+    uint8_t descriptor_id[2];
+    uint8_t operation_id[2];
+    uint8_t operation_type[2];
 } avb_1722_1_aem_start_operation_t;
 
 /* 7.4.55 OPERATION_STATUS Unsolicited Response */
 typedef struct {
-    unsigned char descriptor_type[2];
-    unsigned char descriptor_id[2];
-    unsigned char operation_id[2];
-    unsigned char percent_complete[2];
+    uint8_t descriptor_type[2];
+    uint8_t descriptor_id[2];
+    uint8_t operation_id[2];
+    uint8_t percent_complete[2];
 } avb_1722_1_aem_operation_status_t;
-
 
 #endif /* AVB_1722_1_AECP_AEM_H_ */

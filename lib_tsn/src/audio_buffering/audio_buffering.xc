@@ -18,13 +18,13 @@ unsafe void media_ctl_register(chanend media_ctl,
   media_ctl <: tile_id;
   media_ctl <: clk_ctl_index;
   media_ctl <: num_in;
-  for (int i=0;i<num_in;i++) {
+  for (size_t i=0;i<num_in;i++) {
     int stream_num;
     media_ctl :> stream_num;
     media_ctl <: 0;
   }
   media_ctl <: num_out;
-  for (int i=0;i<num_out;i++) {
+  for (size_t i=0;i<num_out;i++) {
     int fifo_index;
     media_ctl :> fifo_index;
     media_ctl <: output_fifos[fifo_index];
@@ -41,11 +41,11 @@ static void init_audio_input_buffer(audio_double_buffer_t &buffer)
 
 static void init_audio_output_fifos(struct output_finfo &inf,
                        audio_output_fifo_data_t ofifo_data[],
-                       int n)
+                       size_t n)
 {
   unsafe {
-    for(int i=0;i<n;i++) {
-      inf.p_buffer[i] = (unsigned int *unsafe)&ofifo_data[i];
+    for(size_t i = 0; i < n; i++) {
+      inf.p_buffer[i] = (void *unsafe)&ofifo_data[i];
     }
   }
 }
@@ -135,6 +135,7 @@ void audio_buffer_manager(streaming chanend c_audio,
       int32_t sample_out_buf[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
       unsigned tmp;
       unsigned restart = 0;
+      unsigned valid = 0;
 
       c_audio <: input_sample_buf;
       c_audio <: sample_rate;
@@ -143,7 +144,7 @@ void audio_buffer_manager(streaming chanend c_audio,
         c_audio <: (int32_t *unsafe)&sample_out_buf;
       }
       else {
-        for (int i=0; i < 2; i++) {
+        for (size_t i=0; i < 2; i++) {
           c_audio <: (int32_t *unsafe)&sample_out_buf;
         }
       }
@@ -167,23 +168,23 @@ void audio_buffer_manager(streaming chanend c_audio,
             unsafe {
               if (audio_io_type == AUDIO_I2S_IO) {
                 #pragma loop unroll
-                for (int i=0;i<AVB_NUM_MEDIA_OUTPUTS;i+=2) {
+                for (size_t i=0;i<AVB_NUM_MEDIA_OUTPUTS;i+=2) {
                   sample_out_buf[i] = audio_output_fifo_pull_sample(h_out, i,
-                                                                    timestamp);
+                                                                    timestamp, valid);
                 }
                 #pragma loop unroll
-                for (int i=1;i<AVB_NUM_MEDIA_OUTPUTS;i+=2) {
+                for (size_t i=1;i<AVB_NUM_MEDIA_OUTPUTS;i+=2) {
                   sample_out_buf[i] = audio_output_fifo_pull_sample(h_out, i,
-                                                                    timestamp);
+                                                                    timestamp, valid);
                 }
                 c_audio <: (int32_t *unsafe)&sample_out_buf;
               }
               else {
                 #pragma loop unroll
-                for (int i=0;i<AVB_NUM_SINKS;i++) { // FIXME: This should be number of TDM lines
-                  int index = channel + (i*8);
+                for (size_t i=0;i<AVB_NUM_SINKS;i++) { // FIXME: This should be number of TDM lines
+                  size_t index = channel + (i*8);
                   sample_out_buf[i] = audio_output_fifo_pull_sample(h_out, index,
-                                                                    timestamp);
+                                                                    timestamp, valid);
                 }
                 c_audio <: (int32_t *unsafe)&sample_out_buf;
                 channel++;

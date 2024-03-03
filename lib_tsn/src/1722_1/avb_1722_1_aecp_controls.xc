@@ -4,6 +4,7 @@
 #include "avb_1722_common.h"
 #include "avb_1722_1_common.h"
 #include "avb_1722_1_aecp.h"
+#include "avb_1722_def.h"
 #include "misc_timer.h"
 #include "avb_srp_pdu.h"
 #include <string.h>
@@ -44,16 +45,95 @@ static int sampling_rate_from_sfc(int sfc)
   }
 }
 
-static unsafe void get_stream_format_field(avb_stream_info_t *unsafe stream_info, unsigned char stream_format[8])
+static unsafe void get_stream_format_field_61883(avb_stream_info_t *unsafe stream_info, unsigned char stream_format[8])
 {
-  stream_format[0] = 0x00;
-  stream_format[1] = 0xa0;
+  stream_format[0] = IEC_61883_IIDC_SUBTYPE;
+  stream_format[1] = 0xa0; // sf_fmt_r
   stream_format[2] = sfc_from_sampling_rate(stream_info->rate); // 10.3.2 in 61883-6
   stream_format[3] = stream_info->num_channels; // dbs
   stream_format[4] = 0x40; // b[0], nb[1], reserved[2:]
   stream_format[5] = 0; // label_iec_60958_cnt
   stream_format[6] = stream_info->num_channels; // label_mbla_cnt
   stream_format[7] = 0; // label_midi_cnt[0:3], label_smptecnt[4:]
+}
+
+static unsafe void get_stream_format_field_aaf(avb_stream_info_t *unsafe stream_info, unsigned char stream_format[8])
+{
+  int samples_per_packet = ((stream_info->rate / 100) << 16) / (AVB1722_PACKET_RATE / 100);
+  uint8_t aaf_format;
+
+  switch (stream_info->format) {
+  case AVB_FORMAT_AAF_32BIT:
+    aaf_format = AAF_FORMAT_INT_32BIT;
+    break;
+  case AVB_FORMAT_AAF_24BIT:
+    aaf_format = AAF_FORMAT_INT_24BIT;
+    break;
+  default:
+    fail("unknown stream format");
+    break;
+  }
+
+  stream_format[0] = AVTP_AUDIO_SUBTYPE; // rsvd_ui_nsr
+  stream_format[1] = nsr_from_sampling_rate(stream_info->rate); // format
+  stream_format[2] = aaf_format;
+  stream_format[3] = bit_depth_from_format(aaf_format);
+  stream_format[4] = (stream_info->num_channels >> 2) & 0xff;
+  stream_format[5] = (stream_info->num_channels << 6) & 0xc0;
+  stream_format[6] = samples_per_packet >> 12;
+  stream_format[7] = 0; // reserved
+}
+
+static unsafe void get_stream_format_field(avb_stream_info_t *unsafe stream_info, unsigned char stream_format[8])
+{
+  switch (stream_info->format) {
+  case AVB_FORMAT_MBLA_24BIT:
+    get_stream_format_field_61883(stream_info, stream_format);
+    break;
+  case AVB_FORMAT_AAF_32BIT:
+    [[fallthrough]];
+  case AVB_FORMAT_AAF_24BIT:
+    get_stream_format_field_aaf(stream_info, stream_format);
+    break;
+  default:
+    fail("unknown stream format");
+    break;
+  }
+}
+
+static int unpack_stream_format_61883(unsigned char stream_format[8], enum avb_stream_format_t &format, int &rate, int &channels)
+{
+  if (stream_format[1] != 0xa0 || stream_format[4] != 0x40 || stream_format[7] != 0)
+    return 0;
+  format = AVB_FORMAT_MBLA_24BIT;
+  rate = sampling_rate_from_sfc(stream_format[2]);
+  channels = stream_format[6];
+  return 1;
+}
+
+static int unpack_stream_format_aaf(unsigned char stream_format[8], enum avb_stream_format_t &format, int &rate, int &channels)
+{
+  if (stream_format[2] != AAF_FORMAT_INT_32BIT)
+    return 0;
+  // FIXME: check unused bits
+  if (stream_format[3] != 0x20)
+    return 0;
+  format = AVB_FORMAT_AAF_32BIT;
+  rate = sampling_rate_from_nsr(stream_format[1]);
+  channels = stream_format[4] << 2 | (stream_format[5] & 0xc0) >> 6;
+  return 1;
+}
+
+static int unpack_stream_format(unsigned char stream_format[8], enum avb_stream_format_t &format, int &rate, int &channels)
+{
+  switch (stream_format[0]) {
+  case IEC_61883_IIDC_SUBTYPE:
+    return unpack_stream_format_61883(stream_format, format, rate, channels);
+  case AVTP_AUDIO_SUBTYPE:
+    return unpack_stream_format_aaf(stream_format, format, rate, channels);
+  default:
+    return 0;
+  }
 }
 
 unsafe void set_current_fields_in_descriptor(unsigned char *unsafe descriptor,
@@ -223,9 +303,11 @@ unsafe void process_aem_cmd_getset_stream_format(avb_1722_1_aecp_packet_t *unsaf
   }
   else // AECP_AEM_CMD_SET_STREAM_FORMAT
   {
-    format = AVB_FORMAT_MBLA_24BIT;
-    rate = sampling_rate_from_sfc(cmd->stream_format[2]);
-    channels = cmd->stream_format[6];
+    if (!unpack_stream_format(cmd->stream_format, format, rate, channels))
+    {
+      status = AECP_AEM_STATUS_BAD_ARGUMENTS;
+      return;
+    }
 
     if (stream->state == AVB_SOURCE_STATE_ENABLED)
     {
@@ -290,18 +372,16 @@ unsafe void process_aem_cmd_getset_stream_info(avb_1722_1_aecp_packet_t *unsafe 
     memcpy(&cmd->msrp_failure_bridge_id, &reservation->failure_bridge_id, 8);
     cmd->msrp_failure_code = reservation->failure_code;
 
-    memcpy(cmd->stream_dest_mac, reservation->dest_mac_addr, 6);
+    memcpy(cmd->stream_dest_mac, reservation->dest_mac_addr, MACADDR_NUM_BYTES);
     hton_16(cmd->stream_vlan_id, reservation->vlan_id);
 
-    int flags = AECP_STREAM_INFO_FLAGS_STREAM_VLAN_ID_VALID |
-                AECP_STREAM_INFO_FLAGS_STREAM_DESC_MAC_VALID |
-                AECP_STREAM_INFO_FLAGS_STREAM_ID_VALID |
-                AECP_STREAM_INFO_FLAGS_STREAM_FORMAT_VALID |
-                AECP_STREAM_INFO_FLAGS_MSRP_ACC_LAT_VALID |
-                reservation->failure_bridge_id[1] ? AECP_STREAM_INFO_FLAGS_MSRP_FAILURE_VALID : 0;
-
-    hton_32(cmd->flags, flags);
-
+    uint32_t flags = AECP_STREAM_INFO_FLAGS_STREAM_VLAN_ID_VALID |
+                     AECP_STREAM_INFO_FLAGS_STREAM_DESC_MAC_VALID |
+                     AECP_STREAM_INFO_FLAGS_STREAM_ID_VALID |
+                     AECP_STREAM_INFO_FLAGS_STREAM_FORMAT_VALID |
+                     AECP_STREAM_INFO_FLAGS_MSRP_ACC_LAT_VALID |
+                     (reservation->failure_bridge_id[1] ? AECP_STREAM_INFO_FLAGS_MSRP_FAILURE_VALID : 0);
+    hton_32(&cmd->flags[0], flags);
   }
   else
   {

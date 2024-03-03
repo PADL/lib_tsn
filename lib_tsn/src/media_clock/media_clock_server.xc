@@ -12,9 +12,17 @@
 #include "gptp.h"
 #include "gptp_internal.h"
 
-#define DEBUG_MEDIA_CLOCK
-#define PLL_OUTPUT_TIMING_CHECK 0
+#ifndef DEBUG_MEDIA_CLOCK
+#define DEBUG_MEDIA_CLOCK 0
+#endif
+
+#ifndef PLL_OUTPUT_TIMING_CHECK
+#define PLL_OUTPUT_TIMING_CHECK 1
+#endif
+
+#ifndef COMBINE_MEDIA_CLOCK_AND_PTP
 #define COMBINE_MEDIA_CLOCK_AND_PTP 1
+#endif
 
 #define STABLE_THRESHOLD 32
 #define LOCK_COUNT_THRESHOLD 400
@@ -202,14 +210,14 @@ static void manage_buffer(buf_info_t &b,
       int max_adjust = AUDIO_OUTPUT_FIFO_WORD_SIZE-MAX_SAMPLES_PER_1722_PACKET;
       if (fill - sample_diff > max_adjust ||
           fill - sample_diff < -max_adjust) {
-#ifdef DEBUG_MEDIA_CLOCK
+#if DEBUG_MEDIA_CLOCK
     	debug_printf("Media output %d compensation too large: %d samples\n", index, sample_diff);
 #endif
         buf_ctl <: index;
         buf_ctl <: BUF_CTL_RESET;
         inct(buf_ctl);
       } else {
-#ifdef DEBUG_MEDIA_CLOCK
+#if DEBUG_MEDIA_CLOCK
         debug_printf("Media output %d locked: %d samples shorter\n", index, sample_diff);
 #endif
         inform_media_clocks_of_lock(index);
@@ -230,7 +238,7 @@ static void manage_buffer(buf_info_t &b,
 #endif
            ))
   {
-#ifdef DEBUG_MEDIA_CLOCK
+#if DEBUG_MEDIA_CLOCK
       if (b.lock_count == LOCK_COUNT_THRESHOLD)
         debug_printf("Media output %d lost lock\n", index);
 #if UNLOCK_ON_LARGE_DIFF_CHANGE
@@ -387,9 +395,10 @@ void gptp_media_clock_server(server interface media_clock_if media_clock_ctl,
 #if PLL_OUTPUT_TIMING_CHECK
         if ((now - media_clocks[i].next_event) > media_clocks[i].baseLength) {
           static int count = 0;
-          count++;
-          if (count==3)
+          if (++count == 3) {
             printstrln("ERROR: failed to drive PLL freq signal in time");
+            count = 0;
+          }
         }
 #endif
         do_media_clock_output(media_clocks[i], p_fs[i]);
@@ -475,6 +484,7 @@ void gptp_media_clock_server(server interface media_clock_if media_clock_ctl,
                                            media_clock_info_t info):
         int prev_active = media_clocks[clock_num].info.active;
         media_clocks[clock_num].info = info;
+        debug_printf("set_clock_info: prev_active %d active %d\n", prev_active, info.active);
         if (!prev_active && info.active) {
           init_media_clock_recovery(ptp_svr,
                                     clock_num,

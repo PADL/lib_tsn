@@ -1,5 +1,6 @@
 // Copyright (c) 2013-2017, XMOS Ltd, All rights reserved
 #include "avb.h"
+#include <inttypes.h>
 #include <xccompat.h>
 #include "avb_srp.h"
 #include "avb_mvrp.h"
@@ -41,17 +42,17 @@ static avb_sink_info_t sinks[AVB_NUM_SINKS];
 static media_info_t inputs[AVB_NUM_MEDIA_INPUTS];
 static media_info_t outputs[AVB_NUM_MEDIA_OUTPUTS];
 
-static void register_talkers(chanend (&?c_talker_ctl)[], unsigned char mac_addr[6])
+static void register_talkers(chanend (&?c_talker_ctl)[], uint8_t mac_addr[MACADDR_NUM_BYTES])
 {
   unsafe {
-    for (int i=0;i<AVB_NUM_TALKER_UNITS;i++) {
+    for (size_t i = 0; i < AVB_NUM_TALKER_UNITS; i++) {
       int tile_id, num_streams;
       c_talker_ctl[i] :> tile_id;
       c_talker_ctl[i] :> num_streams;
-      for (int k=0; k < 6; k++) {
+      for (size_t k=0; k < MACADDR_NUM_BYTES; k++) {
         c_talker_ctl[i] <: mac_addr[k];
       }
-      for (int j=0;j<num_streams;j++) {
+      for (size_t j = 0; j<num_streams; j++) {
         avb_source_info_t *unsafe source = &sources[max_talker_stream_id];
         source->stream.state = AVB_SOURCE_STATE_DISABLED;
         chanend *unsafe p_talker_ctl = &c_talker_ctl[i];
@@ -81,11 +82,11 @@ static int max_link_id = 0;
 static void register_listeners(chanend (&?c_listener_ctl)[])
 {
   unsafe {
-    for (int i=0;i<AVB_NUM_LISTENER_UNITS;i++) {
+    for (size_t i = 0;i < AVB_NUM_LISTENER_UNITS; i++) {
       int tile_id, num_streams;
       c_listener_ctl[i] :> tile_id;
       c_listener_ctl[i] :> num_streams;
-      for (int j=0;j<num_streams;j++) {
+      for (size_t j=0;j<num_streams;j++) {
         avb_sink_info_t *unsafe sink = &sinks[max_listener_stream_id];
         sink->stream.state = AVB_SINK_STATE_DISABLED;
         chanend *unsafe p_listener_ctl = &c_listener_ctl[i];
@@ -108,7 +109,7 @@ static void register_media(chanend media_ctl[])
     int input_id = 0;
     int output_id = 0;
 
-    for (int i=0;i<AVB_NUM_MEDIA_UNITS;i++) {
+    for (size_t i = 0; i < AVB_NUM_MEDIA_UNITS; i++) {
       int tile_id;
       int num_in;
       int num_out;
@@ -117,7 +118,7 @@ static void register_media(chanend media_ctl[])
       media_ctl[i] :> clk_ctl;
       media_ctl[i] :> num_in;
 
-      for (int j=0;j<num_in;j++) {
+      for (size_t j = 0; j < num_in; j++) {
         media_ctl[i] <: input_id;
         inputs[input_id].tile_id = tile_id;
         inputs[input_id].clk_ctl = clk_ctl;
@@ -128,7 +129,7 @@ static void register_media(chanend media_ctl[])
 
       }
       media_ctl[i] :> num_out;
-      for (int j=0;j<num_out;j++) {
+      for (size_t j = 0; j< num_out; j++) {
         media_ctl[i] <: output_id;
         outputs[output_id].tile_id = tile_id;
         outputs[output_id].clk_ctl = clk_ctl;
@@ -145,7 +146,7 @@ static void init_media_clock_server(client interface media_clock_if
                                     media_clock_ctl)
 {
   if (!isnull(media_clock_ctl)) {
-    for (int i=0;i<AVB_NUM_MEDIA_OUTPUTS;i++) {
+    for (size_t i = 0; i < AVB_NUM_MEDIA_OUTPUTS; i++) {
       media_clock_ctl.set_buf_fifo(i, outputs[i].fifo);
     }
   }
@@ -157,7 +158,7 @@ void avb_init(chanend c_media_ctl[],
               client interface media_clock_if ?i_media_clock_ctl,
               client interface ethernet_cfg_if i_eth_cfg)
 {
-  unsigned char mac_addr[6];
+  uint8_t mac_addr[MACADDR_NUM_BYTES];
   i_eth_cfg.get_macaddr(0, mac_addr);
   register_talkers(c_talker_ctl, mac_addr);
   register_listeners(c_listener_ctl);
@@ -166,14 +167,14 @@ void avb_init(chanend c_media_ctl[],
 static int valid_to_leave_vlan(int vlan)
 {
   int all_streams_disabled = 1;
-  for (int i=0; i < AVB_NUM_SINKS; i++) {
+  for (size_t i = 0; i < AVB_NUM_SINKS; i++) {
     if (sinks[i].stream.state != AVB_SINK_STATE_DISABLED) {
       all_streams_disabled = 0;
       break;
     }
   }
 
-  for (int i=0; i < AVB_NUM_SOURCES; i++) {
+  for (size_t i = 0; i < AVB_NUM_SOURCES; i++) {
     if (sources[i].stream.state != AVB_SINK_STATE_DISABLED) {
       all_streams_disabled = 0;
       break;
@@ -190,7 +191,7 @@ static void set_avb_sink_map(chanend c, avb_sink_info_t &sink, unsigned sink_num
     c <: (int)sink.stream.local_id;
     c <: AVB1722_ADJUST_LISTENER_CHANNEL_MAP;
     c <: (int)sink.stream.sync;
-    for (int i=0;i<sink.stream.num_channels;i++) {
+    for (size_t i = 0;i<sink.stream.num_channels; i++) {
       if (sink.map[i] == AVB_CHANNEL_UNMAPPED) {
         debug_printf("  %d unmapped\n", i);
       }
@@ -223,7 +224,7 @@ static void update_sink_state(unsigned sink_num,
         *c <: sink->stream.rate;
         *c <: (int)sink->stream.num_channels;
 
-        for (int i=0;i<sink->stream.num_channels;i++) {
+        for (size_t i = 0;i<sink->stream.num_channels; i++) {
           if (sink->map[i] == AVB_CHANNEL_UNMAPPED) {
             debug_printf("  %d unmapped\n", i);
           }
@@ -247,7 +248,7 @@ static void update_sink_state(unsigned sink_num,
 
       ethernet_macaddr_filter_t stream_multicast_filter;
       stream_multicast_filter.appdata = sink->stream.local_id;
-      memcpy(stream_multicast_filter.addr, sink->reservation.dest_mac_addr, 6);
+      memcpy(stream_multicast_filter.addr, sink->reservation.dest_mac_addr, MACADDR_NUM_BYTES);
       i_eth_cfg.add_macaddr_filter(0, 1, stream_multicast_filter);
 
       if (isnull(i_srp)) {
@@ -273,7 +274,7 @@ static void update_sink_state(unsigned sink_num,
 
       ethernet_macaddr_filter_t stream_multicast_filter;
       stream_multicast_filter.appdata = sink->stream.local_id;
-      memcpy(stream_multicast_filter.addr, sink->reservation.dest_mac_addr, 6);
+      memcpy(stream_multicast_filter.addr, sink->reservation.dest_mac_addr, MACADDR_NUM_BYTES);
       i_eth_cfg.del_macaddr_filter(0, 1, stream_multicast_filter);
 
       if (isnull(i_srp)) {
@@ -297,7 +298,7 @@ static void update_sink_state(unsigned sink_num,
 static void configure_talker_stream(chanend c, avb_source_info_t *alias source, unsigned source_num) {
   unsigned fifo_mask = 0;
 
-  for (int i=0;i<source->stream.num_channels;i++) {
+  for (size_t i = 0;i<source->stream.num_channels; i++) {
     inputs[source->map[i]].mapped_to = source_num;
     fifo_mask |= (1 << source->map[i]);
   }
@@ -307,7 +308,7 @@ static void configure_talker_stream(chanend c, avb_source_info_t *alias source, 
     c <: (int)source->stream.local_id;
     c <: (int)source->stream.format;
 
-    for (int i=0; i < 6;i++) {
+    for (size_t i = 0; i < MACADDR_NUM_BYTES; i++) {
       c <: (int)source->reservation.dest_mac_addr[i];
     }
 
@@ -315,7 +316,7 @@ static void configure_talker_stream(chanend c, avb_source_info_t *alias source, 
     c <: (int)source->stream.num_channels;
     c <: fifo_mask;
 
-    for (int i=0;i<source->stream.num_channels;i++) {
+    for (size_t i = 0;i<source->stream.num_channels; i++) {
       c <: source->map[i];
     }
     c <: (int)source->stream.rate;
@@ -329,11 +330,10 @@ static void configure_talker_stream(chanend c, avb_source_info_t *alias source, 
 
 static unsigned avb_srp_calculate_max_framesize(avb_source_info_t *source_info)
 {
-#if defined(AVB_1722_FORMAT_61883_6) || defined(AVB_1722_FORMAT_SAF)
+#if defined(AVB_1722_FORMAT_61883_6) || defined(AVB_1722_FORMAT_AAF)
   const unsigned samples_per_packet = (AVB_MAX_AUDIO_SAMPLE_RATE + (AVB1722_PACKET_RATE-1))/AVB1722_PACKET_RATE;
   return AVB1722_PLUS_SIP_HEADER_SIZE + (source_info->stream.num_channels * samples_per_packet * 4);
-#endif
-#if defined(AVB_1722_FORMAT_61883_4)
+#else
   return AVB1722_PLUS_SIP_HEADER_SIZE + (192 * MAX_TS_PACKETS_PER_1722);
 #endif
 }
@@ -363,7 +363,7 @@ static void update_source_state(unsigned source_num,
       }
 
       // check that the map is ok
-      for (int i=0;i<source->stream.num_channels;i++) {
+      for (size_t i = 0;i<source->stream.num_channels; i++) {
         if (inputs[source->map[i]].mapped_to != UNMAPPED) {
           valid = 0;
         }
@@ -434,7 +434,7 @@ static void update_source_state(unsigned source_num,
     else if (prev != AVB_SOURCE_STATE_DISABLED &&
              state == AVB_SOURCE_STATE_DISABLED) {
       // disabled the source
-        for (int i=0;i<source->stream.num_channels;i++) {
+        for (size_t i = 0;i<source->stream.num_channels; i++) {
           inputs[source->map[i]].mapped_to = UNMAPPED;
         }
 
@@ -469,7 +469,7 @@ static void get_debug_counters(struct avb_debug_counters &counters)
   memset(&counters, 0, sizeof(struct avb_debug_counters));
 
 #if AVB_NUM_SOURCES > 0
-  for (int i = 0; i < max_talker_stream_id; i++) {
+  for (size_t i = 0; i < max_talker_stream_id; i++) {
     struct talker_counters tc;
     unsafe {
       chanend * unsafe c = sources[i].talker_ctl;
@@ -483,7 +483,7 @@ static void get_debug_counters(struct avb_debug_counters &counters)
 #endif
 
 #if AVB_NUM_SINKS > 0
-  for (int i = 0; i < max_listener_stream_id; i++) {
+  for (size_t i = 0; i < max_listener_stream_id; i++) {
     struct listener_counters lc;
     unsafe {
       chanend * unsafe c = sinks[i].listener_ctl;
@@ -617,7 +617,7 @@ void set_avb_source_volumes(unsigned sink_num, int volumes[], int count)
       *c <: sink->stream.local_id;
       *c <: AVB1722_ADJUST_LISTENER_VOLUME;
       *c <: count;
-      for (int i=0;i<count;i++) {
+      for (size_t i = 0;i < count; i++) {
         *c <:  volumes[i];
       }
     }
@@ -634,9 +634,9 @@ void avb_process_1722_control_packet(unsigned int buf0[],
                                      client interface avb_1722_1_control_callbacks i_1722_1_entity) {
 
   if (packet_type == ETH_IF_STATUS) {
-    if (((unsigned char *)buf0)[0] == ETHERNET_LINK_UP) {
+    if (((uint8_t *)buf0)[0] == ETHERNET_LINK_UP) {
       if (NUM_ETHERNET_PORTS == 1) {
-        unsigned char base_addr[6];
+        uint8_t base_addr[MACADDR_NUM_BYTES];
         if (!avb_1722_maap_get_base_address(base_addr)) {
           avb_1722_maap_request_addresses(AVB_NUM_SOURCES, base_addr);
         }
@@ -666,7 +666,7 @@ void avb_process_1722_control_packet(unsigned int buf0[],
     }
     int len = nbytes - eth_hdr_size;
 
-    unsigned char *buf = (unsigned char *) buf0;
+    uint8_t *buf = (uint8_t *) buf0;
 
     switch (etype) {
       case AVB_1722_ETHERTYPE:
@@ -681,7 +681,7 @@ void avb_process_1722_control_packet(unsigned int buf0[],
   }
 }
 
-int get_avb_ptp_gm(unsigned char a0[])
+int get_avb_ptp_gm(uint8_t a0[])
 {
   // ptp_get_current_grandmaster(*c_ptp, a0);
   return 1;
@@ -702,7 +702,7 @@ int get_avb_ptp_port_pdelay(int srcport, unsigned *pdelay)
 
 unsigned avb_get_source_stream_index_from_stream_id(unsigned int stream_id[2])
 {
-  for (unsigned i=0; i<AVB_NUM_SOURCES; ++i) {
+  for (size_t i = 0; i < AVB_NUM_SOURCES; ++i) {
     if (stream_id[0] == sources[i].reservation.stream_id[0] &&
         stream_id[1] == sources[i].reservation.stream_id[1]) {
       return i;
@@ -713,7 +713,7 @@ unsigned avb_get_source_stream_index_from_stream_id(unsigned int stream_id[2])
 
 unsigned avb_get_sink_stream_index_from_stream_id(unsigned int stream_id[2])
 {
-  for (unsigned i=0; i<AVB_NUM_SINKS; ++i) {
+  for (size_t i = 0; i < AVB_NUM_SINKS; ++i) {
     if (stream_id[0] == sinks[i].reservation.stream_id[0] &&
         stream_id[1] == sinks[i].reservation.stream_id[1]) {
       return i;
@@ -724,7 +724,7 @@ unsigned avb_get_sink_stream_index_from_stream_id(unsigned int stream_id[2])
 
 unsigned avb_get_source_stream_index_from_pointer(avb_source_info_t *unsafe p)
 {
-	for (unsigned i=0; i<AVB_NUM_SOURCES; ++i) {
+	for (size_t i = 0; i < AVB_NUM_SOURCES; ++i) {
 		if (p == &sources[i]) return i;
 	}
 	return -1u;
@@ -732,7 +732,7 @@ unsigned avb_get_source_stream_index_from_pointer(avb_source_info_t *unsafe p)
 
 unsigned avb_get_sink_stream_index_from_pointer(avb_sink_info_t *unsafe p)
 {
-	for (unsigned i=0; i<AVB_NUM_SINKS; ++i) {
+	for (size_t i = 0; i < AVB_NUM_SINKS; ++i) {
 		if (p == &sinks[i]) return i;
 	}
 	return -1u;
@@ -752,13 +752,13 @@ int avb_register_listener_streams(chanend listener_ctl,
 
 void avb_register_talker_streams(chanend talker_ctl,
                                  int num_streams,
-                                 unsigned char mac_addr[6])
+                                 uint8_t mac_addr[MACADDR_NUM_BYTES])
 {
   int tile_id;
   tile_id = get_local_tile_id();
   talker_ctl <: tile_id;
   talker_ctl <: num_streams;
-  for (int i=0; i < 6; i++) {
+  for (size_t i = 0; i < MACADDR_NUM_BYTES; i++) {
     talker_ctl :> mac_addr[i];
   }
 }

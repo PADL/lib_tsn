@@ -2,22 +2,24 @@
 #ifndef AVB_1722_1_PROTOCOL_H_
 #define AVB_1722_1_PROTOCOL_H_
 
+#include <inttypes.h>
+
 /**
  * The general header for a 1722 packet
  */
 typedef struct avb_1722_1_packet_header_t {
-  unsigned char cd_subtype;
-  unsigned char sv_avb_version_msg_type;
-  unsigned char valid_time_data_length_hi;
-  unsigned char data_length_lo;
+  uint8_t cd_subtype;
+  uint8_t sv_avb_version_msg_type;
+  uint8_t valid_time_data_length_hi;
+  uint8_t data_length_lo;
 
 } avb_1722_1_packet_header_t;
 
 #define AVB_1722_1_PACKET_BODY_POINTER_OFFSET 	1	// sizeof(avb_1722_1_packet_header_t) = 4 bytes
 
 typedef union {
-	unsigned long long l;
-	unsigned char c[8];
+	uint64_t l;
+	uint8_t c[8];
 } guid_t, stream_t, gmid_t;
 
 #ifndef __XC__
@@ -29,6 +31,13 @@ typedef const guid_t & const_guid_ref_t;
 #define DEFAULT_1722_1_CD_FLAG (1)
 #define DEFAULT_1722_1_AVB_VERSION (0x0)
 
+#define IEC_61883_IIDC_SUBTYPE              (0x00)
+#define AVTP_MMA_STREAM_SUBTYPE             (0x01)
+#define AVTP_AUDIO_SUBTYPE                  (0x02)
+#define AVTP_VIDEO_SUBTYPE                  (0x03)
+#define AVTP_CONTROL_SUBTYPE                (0x04)
+
+#define DEFAULT_1722_1_61883_IIDC_SUBTYPE   IEC_61883_IIDC_SUBTYPE
 #define DEFAULT_1722_1_ADP_SUBTYPE 	(0x7a)
 #define DEFAULT_1722_1_AECP_SUBTYPE (0x7b)
 #define DEFAULT_1722_1_ACMP_SUBTYPE (0x7c)

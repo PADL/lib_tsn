@@ -10,7 +10,7 @@
 #include "misc_timer.h"
 
 // The clock recovery internal representation of the worldlen.  More precision and range than the external
-// worldlen representation.  The max percision is 26 bits before the PTP clock recovery multiplcation overflows
+// worldlen representation.  The max percision is 26 bits before the PTP clock recovery multiplication overflows
 #define WORDLEN_FRACTIONAL_BITS 24
 
 /**
@@ -175,6 +175,8 @@ unsigned int update_media_clock(chanend ptp_svr,
 		break;
 	}
 
+	case DEVICE_MEDIA_CLOCK_PTP:
+	default:
 		break;
 	}
 

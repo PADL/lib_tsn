@@ -6,6 +6,7 @@
 #include <xc2compat.h>
 #include "default_avb_conf.h"
 #include "audio_buffering.h"
+#include "debug_print.h"
 
 #ifndef AVB_MAX_AUDIO_SAMPLE_RATE
 #define AVB_MAX_AUDIO_SAMPLE_RATE (48000)
@@ -28,9 +29,9 @@ typedef enum ofifo_state_t {
 
 struct audio_output_fifo_data_t {
   int zero_flag;							//!< When set, the FIFO will output zero samples instead of its contents
-  unsigned int dptr;						//!< The read pointer
-  unsigned int wrptr;						//!< The write pointer
-  unsigned int marker;						//!< This indicates which sample is the one which the timestamps apply to
+  uintptr_t dptr;						//!< The read pointer
+  uintptr_t wrptr;						//!< The write pointer
+  uintptr_t marker;						//!< This indicates which sample is the one which the timestamps apply to
   int local_ts;								//!< When a marked sample has played out, this contains the ref clock when it happened.
   int ptp_ts;								//!< Contains the PTP timestamp of the marked sample.
   unsigned int sample_count;				//!< The count of samples that have passed through the buffer.
@@ -39,7 +40,6 @@ struct audio_output_fifo_data_t {
   int last_notification_time;				//!< Last time that the clock recovery thread was informed of the timestamp info
   int media_clock;							//!<
   int pending_init_notification;			//!<
-  int volume;                               //!< The linear volume multipler in 2.30 signed fixed point format
   unsigned int fifo[AUDIO_OUTPUT_FIFO_WORD_SIZE];
 };
 
@@ -56,7 +56,6 @@ typedef struct ofifo_t {
   int last_notification_time;
   int media_clock;
   int pending_init_notification;
-  int volume;
   unsigned int fifo[AUDIO_OUTPUT_FIFO_WORD_SIZE];
 } ofifo_t;
 
@@ -124,10 +123,13 @@ audio_output_fifo_maintain(buffer_handle_t s,
  */
 void
 audio_output_fifo_strided_push(buffer_handle_t s0,
-                               unsigned index,
-                               unsigned int *sample_ptr,
-                               int stride,
-                               int n);
+                               size_t index,
+                               uint8_t *sample_ptr,
+                               size_t sample_size,
+                               size_t stride,
+                               size_t n,
+                               uint8_t subtype,
+                               uint32_t valid_mask);
 #endif
 
 
@@ -152,22 +154,29 @@ __attribute__((always_inline))
 unsafe static inline unsigned int
 audio_output_fifo_pull_sample(buffer_handle_t s0,
                               unsigned index,
-                              unsigned int timestamp)
+                              unsigned int timestamp,
+                              REFERENCE_PARAM(unsigned int, valid))
 {
   ofifo_t *unsafe s = (ofifo_t *unsafe)((struct output_finfo *unsafe)s0)->p_buffer[index];
   unsigned int sample;
   unsigned int *unsafe dptr = s->dptr;
 
-  if (dptr == s->wrptr)
-  {
+#ifdef __XC__
+  valid = (dptr != s->wrptr);
+#else
+  *valid = (dptr != s->wrptr);
+#endif
+
+  if (dptr == s->wrptr) {
     // Underflow
-    // printstrln("Media output FIFO underflow");
+    // debug_printf("Media output FIFO underflow\n");
     return 0;
   }
 
   sample = *dptr;
   if (dptr == s->marker && s->local_ts == 0) {
-    if (timestamp==0) timestamp=1;
+    if (timestamp == 0)
+        timestamp=1;
     s->local_ts = timestamp;
   }
   dptr++;
@@ -229,18 +238,4 @@ audio_output_fifo_handle_buf_ctl(chanend buf_ctl,
                                  REFERENCE_PARAM(int, buf_ctl_notified),
                                  timer tmr);
 
-/**
- *  \brief Set the volume control multiplier for the media FIFO
- *
- *  \param s0 handle to FIFO buffers
- *  \param index which buffer to operate on
- *  \param volume the 2.30 signed fixed point linear volume multiplier
- */
-void
-audio_output_fifo_set_volume(buffer_handle_t s0,
-                             unsigned index,
-                             unsigned int volume);
-
 #endif
-
-

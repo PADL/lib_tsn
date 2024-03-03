@@ -333,6 +333,12 @@
 
 /* Types */
 #define AEM_JACK_TYPE_SPEAKER                   0x0000
+#define AEM_JACK_TYPE_HEADPHONE                 0x0001
+#define AEM_JACK_TYPE_ANALOG_MICROPHONE         0x0002
+#define AEM_JACK_TYPE_SPDIF                     0x0003
+#define AEM_JACK_TYPE_ADAT                      0x0004
+#define AEM_JACK_TYPE_TDIF                      0x0005
+#define AEM_JACK_TYPE_MADI                      0x0006
 #define AEM_JACK_TYPE_UNBALANCED_ANALOG         0x0007
 #define AEM_JACK_TYPE_DIGITAL                   0x0009
 

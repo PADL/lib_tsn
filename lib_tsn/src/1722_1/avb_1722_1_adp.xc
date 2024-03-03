@@ -14,7 +14,7 @@
 #include "avb_1722_1.h"
 
 /* Enumerations for state variables */
-static enum { ADP_ADVERTISE_IDLE,
+static enum { ADP_ADVERTISE_IDLE = 0,
        ADP_ADVERTISE_WAITING,
        ADP_ADVERTISE_ADVERTISE_0,
        ADP_ADVERTISE_ADVERTISE_1,
@@ -22,12 +22,36 @@ static enum { ADP_ADVERTISE_IDLE,
        ADP_ADVERTISE_DEPART_THEN_ADVERTISE
 } adp_advertise_state = ADP_ADVERTISE_IDLE;
 
-static enum { ADP_DISCOVERY_IDLE,
+static const char * alias
+adp_advertise_state_to_string(unsigned int state) {
+    switch (state) {
+    case ADP_ADVERTISE_IDLE: return "IDLE";
+    case ADP_ADVERTISE_WAITING: return "WAITING";
+    case ADP_ADVERTISE_ADVERTISE_0: return "ADVERTISE_0";
+    case ADP_ADVERTISE_ADVERTISE_1: return "ADVERTISE_1";
+    case ADP_ADVERTISE_DEPARTING: return "DEPARTING";
+    case ADP_ADVERTISE_DEPART_THEN_ADVERTISE: return "DEPART_THEN_ADVERTISE";
+    default: return "UNKNOWN";
+    }
+}
+
+static enum { ADP_DISCOVERY_IDLE = 0,
        ADP_DISCOVERY_WAITING,
        ADP_DISCOVERY_DISCOVER,
        ADP_DISCOVERY_ADDED,
        ADP_DISCOVERY_REMOVED
 } adp_discovery_state = ADP_DISCOVERY_IDLE;
+
+static const char * alias
+adp_discovery_state_to_string(unsigned int state) {
+    switch (state) {
+    case ADP_DISCOVERY_WAITING: return "WAITING";
+    case ADP_DISCOVERY_DISCOVER: return "DISCOVER";
+    case ADP_DISCOVERY_ADDED: return "ADDED";
+    case ADP_DISCOVERY_REMOVED: return "REMOVED";
+    default: return "UNKNOWN";
+    }
+}
 
 extern unsigned int avb_1722_1_buf[AVB_1722_1_PACKET_SIZE_WORDS];
 extern guid_t my_guid;
@@ -66,6 +90,10 @@ void avb_1722_1_adp_init()
 
     adp_advertise_state = ADP_ADVERTISE_IDLE;
     adp_discovery_state = ADP_DISCOVERY_WAITING;
+
+    debug_printf("ADP: Initialized, advertise state: %s, discovery state: %s\n",
+                 adp_advertise_state_to_string(adp_advertise_state),
+                 adp_discovery_state_to_string(adp_discovery_state));
     start_avb_timer(adp_discovery_timer, 1);
 }
 
@@ -185,7 +213,8 @@ static int avb_1722_1_entity_database_add(avb_1722_1_adp_packet_t &pkt)
     }
     else
     {
-        // TODO: Database full - we should have a scheme for dealing with this
+        debug_printf("avb_1722_1_entity_database_add: database full\n");
+        // TODO: Database full - we should have a scheme for dealing with this (LRU cache?)
     }
 
     return 0;
@@ -372,12 +401,12 @@ void avb_1722_1_adp_advertising_periodic(client interface ethernet_tx_if i_eth, 
                 adp_advertise_state = ADP_ADVERTISE_ADVERTISE_1;
             }
             break;
-#pragma fallthrough
+
         case ADP_ADVERTISE_ADVERTISE_0:
             avb_1722_1_adp_change_ptp_grandmaster(ptp_current.c);
             start_avb_timer(ptp_monitor_timer, 1); //Every second
             adp_advertise_state = ADP_ADVERTISE_ADVERTISE_1;
-            // Fall through and send immediately
+            [[fallthrough]];
 
         case ADP_ADVERTISE_ADVERTISE_1:
             avb_1722_1_create_adp_packet(ENTITY_AVAILABLE, my_guid);
@@ -395,7 +424,6 @@ void avb_1722_1_adp_advertising_periodic(client interface ethernet_tx_if i_eth, 
 
             adp_advertise_state = (adp_advertise_state == ADP_ADVERTISE_DEPART_THEN_ADVERTISE) ? ADP_ADVERTISE_ADVERTISE_0 : ADP_ADVERTISE_IDLE;
             avb_1722_1_available_index = 0;
-
             break;
 
         default:

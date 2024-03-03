@@ -1,42 +1,41 @@
 // Copyright (c) 2011-2017, XMOS Ltd, All rights reserved
+// Portions Copyright (c) 2024 PADL Software Pty Ltd, All rights reserved
+
 #include <print.h>
 #include <xccompat.h>
 #include <xscope.h>
+#include <xassert.h>
 #include "audio_output_fifo.h"
 #include "avb_1722_def.h"
 #include "media_clock_client.h"
+#include "avb_1722_1_protocol.h"
 
 #define OUTPUT_DURING_LOCK 0
 #define NOTIFICATION_PERIOD 250
 
-// Volume is represented as a 2.30 signed fixed point number.
-//    SIFFFFFF.FFFFFFFF.FFFFFFFF.FFFFFFFF
-//
-//    Clearly, apart from weird stuff, we should restrict the values to 0 -> 1, instead
-//    of -2 to 2
-#define MAX_VOLUME 0x40000000
+#define likely(x) __builtin_expect(!!(x), 1)
+#define unlikely(x) __builtin_expect(!!(x), 0)
 
 void
 audio_output_fifo_init(buffer_handle_t s0, unsigned index)
 {
-  ofifo_t *s = (ofifo_t *)((struct output_finfo *)s0)->p_buffer[index];
+    ofifo_t *s = (ofifo_t *)((struct output_finfo *)s0)->p_buffer[index];
 
-  s->state = DISABLED;
-  s->dptr = START_OF_FIFO(s);
-  s->wrptr = START_OF_FIFO(s);
-  s->media_clock = -1;
-  s->pending_init_notification = 0;
-  s->last_notification_time = 0;
-  s->volume = MAX_VOLUME;
+    s->state = DISABLED;
+    s->dptr = START_OF_FIFO(s);
+    s->wrptr = START_OF_FIFO(s);
+    s->media_clock = -1;
+    s->pending_init_notification = 0;
+    s->last_notification_time = 0;
 }
 
 void
 disable_audio_output_fifo(buffer_handle_t s0, unsigned index)
 {
-  ofifo_t *s = (ofifo_t *)((struct output_finfo *)s0)->p_buffer[index];
+    ofifo_t *s = (ofifo_t *)((struct output_finfo *)s0)->p_buffer[index];
 
-  s->state = DISABLED;
-  s->zero_flag = 1;
+    s->state = DISABLED;
+    s->zero_flag = 1;
 }
 
 void
@@ -77,11 +76,6 @@ void audio_output_fifo_set_ptp_timestamp(buffer_handle_t s0,
     s->marker = new_marker;
   }
 }
-
-static inline unsigned int
-audio_output_fifo_pull_sample(buffer_handle_t s0,
-                              unsigned index,
-                              unsigned int timestamp);
 
 // 1722 thread
 void
@@ -147,62 +141,63 @@ audio_output_fifo_maintain(buffer_handle_t s0,
 // 1722 thread
 void
 audio_output_fifo_strided_push(buffer_handle_t s0,
-                               unsigned index,
-                               unsigned int *sample_ptr,
-                               int stride,
-                               int n)
-
+                               size_t index,
+                               uint8_t *sample_ptr,
+                               size_t sample_length, // size of sample in bytes
+                               size_t stride, // skip * sample_length bytes to get to next sample
+                               size_t num_samples, // how many samples in the entire payload
+                               uint8_t subtype,
+                               uint32_t valid_mask)
 {
   ofifo_t *s = (ofifo_t *)((struct output_finfo *)s0)->p_buffer[index];
   unsigned int *wrptr = s->wrptr;
   unsigned int *new_wrptr;
-  int i;
-  int sample;
-#ifdef AUDIO_OUTPUT_FIFO_VOLUME_CONTROL
-  int volume = (s->state == ZEROING) ? 0 : s->volume;
-#else
-  int volume = (s->state == ZEROING) ? 0 : 1;
-#endif
-  int count=0;
+  uint32_t sample;
+  size_t sample_count = 0;
 
-  for(i=0;i<n;i+=stride) {
-    count++;
-    sample = *sample_ptr;
-    sample = __builtin_bswap32(sample);
-    sample_ptr += stride;
+  for (size_t i = 0; i < num_samples; i += stride) {
+    if (subtype == IEC_61883_IIDC_SUBTYPE) {
+        sample = __builtin_bswap32(*((uint32_t *)sample_ptr));
+        sample <<= 8; // IEC 61883 samples are right justified
+    } else {
+        switch (sample_length) {
+        case 4:
+            sample = __builtin_bswap32(*((uint32_t *)sample_ptr));
+            break;
+        case 3:
+            sample = (uint32_t)sample_ptr[0] << 16;
+            sample |= (uint32_t)sample_ptr[1] << 8;
+            sample |= (uint32_t)sample_ptr[2] << 0;
+            break;
+        case 2:
+            sample = (uint32_t)(__builtin_bswap16(*((uint16_t *)sample_ptr)) << 16);
+            break;
+        default:
+            fail("unknown sample bit depth");
+        }
+    }
 
-#ifndef AVB_1722_FORMAT_SAF
-    sample = sample << 8;
-#endif
+    sample_ptr += sample_length * stride;
+    sample_count++;
 
-#ifdef AUDIO_OUTPUT_FIFO_VOLUME_CONTROL
+    if (unlikely(s->state == ZEROING))
+        sample = 0;
 
-    {
-        // Multiply volume into upper word of 64 bit result
-    	int h=0, l=0;
-		asm ("maccs %0,%1,%2,%3":"+r"(h),"+r"(l):"r"(sample),"r"(volume));
-		sample = h >> 6;
-	    sample &= 0xffffff;
-	}
-#else
-    sample = (sample * volume);
-#endif
+    new_wrptr = wrptr + 1;
 
-    new_wrptr = wrptr+1;
-
-    if (new_wrptr == END_OF_FIFO(s)) new_wrptr = START_OF_FIFO(s);
+    if (new_wrptr == END_OF_FIFO(s))
+        new_wrptr = START_OF_FIFO(s);
 
     if (new_wrptr != s->dptr) {
-      *wrptr = sample;
-      wrptr = new_wrptr;
-    }
-    else {
-        // Overflow
+        *wrptr = sample & valid_mask;
+        wrptr = new_wrptr;
+    } else {
+        debug_printf("audio_output_fifo_strided_push: overflow index %u\n", index);
     }
   }
 
   s->wrptr = wrptr;
-  s->sample_count+=count;
+  s->sample_count += sample_count;
 }
 
 // 1722 thread
@@ -279,13 +274,4 @@ audio_output_fifo_handle_buf_ctl(chanend buf_ctl,
     default:
       break;
     }
-}
-
-void
-audio_output_fifo_set_volume(buffer_handle_t s0,
-                             unsigned index,
-                             unsigned int volume)
-{
-	  ofifo_t *s = (ofifo_t *)((struct output_finfo *)s0)->p_buffer[index];
-	  s->volume = volume;
 }

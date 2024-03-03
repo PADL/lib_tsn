@@ -70,10 +70,10 @@ void avb_1722_1_create_1722_1_header(   const unsigned char* dest_addr,
     hdr->ethertype.data[0] = AVB_1722_ETHERTYPE >> 8;
     hdr->ethertype.data[1] = AVB_1722_ETHERTYPE & 0xff;
 
-    SET_1722_1_CD_FLAG(pkt, 1);
+    SET_1722_1_CD_FLAG(pkt, DEFAULT_1722_1_CD_FLAG);
     SET_1722_1_SUBTYPE(pkt, subtype);
     SET_1722_1_SV(pkt, 0);
-    SET_1722_1_AVB_VERSION(pkt, 0);
+    SET_1722_1_AVB_VERSION(pkt, DEFAULT_1722_1_AVB_VERSION);
     SET_1722_1_MSG_TYPE(pkt, message_type);
     SET_1722_1_VALID_TIME(pkt, valid_time_status);
     SET_1722_1_DATALENGTH(pkt, data_len);

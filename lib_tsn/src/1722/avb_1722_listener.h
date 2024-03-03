@@ -9,6 +9,7 @@
 #ifndef __XC__
 #define streaming
 #endif
+#include <inttypes.h>
 #include <xccompat.h>
 #include "default_avb_conf.h"
 #include "avb_1722_def.h"
@@ -29,15 +30,15 @@
 
 
 typedef struct avb_1722_stream_info_t {
-  short active;                    //!< 1-bit flag to say if the stream is active
-  short state;                     //!< Generic state info
+  uint8_t active;                  //!< 1-bit flag to say if the stream is active
+  uint8_t state;                   //!< Generic state info
+  uint8_t last_sequence;           //!< The sequence number from the last 1722 packet
   int chan_lock;                   //!< Counter for locking onto a data stream
   int rate;                        //!< The estimated rate of the audio traffic
   int prev_num_samples;            //!< Number of samples in last received 1722 packet
   int num_channels_in_payload;     //!< The number of channels in the 1722 payloads
   int num_channels;
   int dbc;                         //!< The DBC of the last seen packet
-  int last_sequence;               //!< The sequence number from the last 1722 packet
   audio_output_fifo_t map[AVB_MAX_CHANNELS_PER_LISTENER_STREAM];
 } avb_1722_stream_info_t;
 

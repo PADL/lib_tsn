@@ -9,6 +9,7 @@
 #define __AVB_AVB1722_TALKER_H__ 1
 
 #include "avb_1722_def.h"
+#include <inttypes.h>
 #include <xccompat.h>
 #include "default_avb_conf.h"
 #include "gptp.h"

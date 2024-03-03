@@ -101,7 +101,7 @@ typedef struct
                                   // bit 6   : gv. gateway info field valid
                                   // bit 7   : tv. timestamp field valid
   unsigned char sequence_number;  //
-  unsigned char reseved_tu;       // bit 0-6 : reserved
+  unsigned char reserved_tu;      // bit 0-6 : reserved
                                   // bit 7   : tu. timestamp uncertain.
   unsigned char stream_id[8];     // 802.1Qat Stream ID
   unsigned char avb_timestamp[4]; //

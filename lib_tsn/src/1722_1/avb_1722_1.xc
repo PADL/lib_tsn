@@ -30,9 +30,9 @@ unsigned int avb_1722_1_buf[AVB_1722_1_PACKET_SIZE_WORDS];
 // The GUID of this device
 guid_t my_guid;
 
-void avb_1722_1_init(unsigned char macaddr[6], unsigned serial_num)
+void avb_1722_1_init(unsigned char macaddr[MACADDR_NUM_BYTES], unsigned serial_num)
 {
-    memcpy(my_mac_addr, macaddr, 6);
+    memcpy(my_mac_addr, macaddr, MACADDR_NUM_BYTES);
 
     my_guid.c[0] = macaddr[5];
     my_guid.c[1] =  macaddr[4];

@@ -428,14 +428,13 @@ void avb_1722_maap_process_packet(unsigned char buf[nbytes], unsigned int nbytes
       }
     }
     break;
-#pragma fallthrough
   case MAAP_DEFEND:
   #if AVB_DEBUG_MAAP
     debug_printf("MAAP: Rx defend\n");
   #endif
     test_addr = &maap_pkt->conflict_start_address[0];
     test_count = GET_MAAP_CONFLICT_COUNT(maap_pkt);
-    /* Fallthrough intentional */
+    [[fallthrough]];
   case MAAP_ANNOUNCE:
     if (maap_conflict(test_addr, test_count, null, null))
     {

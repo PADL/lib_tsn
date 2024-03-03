@@ -92,7 +92,7 @@ void avb_1722_1_aem_descriptors_init(unsigned int serial_num)
 
   avb_itoa((int)serial_num,(char *)&desc_entity[244], 10, 0);
 
-  for (int i=0; i < 6; i++)
+  for (int i=0; i < MACADDR_NUM_BYTES; i++)
   {
     // mac_address in AVB Interface Descriptor
     desc_avb_interface_0[70+i] = my_mac_addr[i];
@@ -343,10 +343,9 @@ static int create_aem_read_descriptor_response(unsigned int read_type,
     }
   }
 
-
   if (found_descriptor)
   {
-    int packet_size = sizeof(ethernet_hdr_t)+sizeof(avb_1722_1_packet_header_t)+24+desc_size_bytes;
+    size_t packet_size = sizeof(ethernet_hdr_t)+sizeof(avb_1722_1_packet_header_t)+24+desc_size_bytes;
 
     avb_1722_1_aecp_aem_msg_t *aem = (avb_1722_1_aecp_aem_msg_t*)avb_1722_1_create_aecp_response_header(src_addr, AECP_AEM_STATUS_SUCCESS, AECP_CMD_AEM_COMMAND, desc_size_bytes+16, pkt);
 
@@ -357,7 +356,7 @@ static int create_aem_read_descriptor_response(unsigned int read_type,
   }
   else // Descriptor not found, send NO_SUCH_DESCRIPTOR reply
   {
-    int packet_size = sizeof(ethernet_hdr_t)+sizeof(avb_1722_1_packet_header_t)+20+sizeof(avb_1722_1_aem_read_descriptor_command_t);
+    size_t packet_size = sizeof(ethernet_hdr_t)+sizeof(avb_1722_1_packet_header_t)+20+sizeof(avb_1722_1_aem_read_descriptor_command_t);
 
     avb_1722_1_aecp_aem_msg_t *aem = (avb_1722_1_aecp_aem_msg_t*)avb_1722_1_create_aecp_response_header(src_addr, AECP_AEM_STATUS_NO_SUCH_DESCRIPTOR, AECP_CMD_AEM_COMMAND, 40, pkt);
 
