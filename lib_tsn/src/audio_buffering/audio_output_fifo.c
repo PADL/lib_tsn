@@ -155,6 +155,9 @@ audio_output_fifo_strided_push(buffer_handle_t s0,
   uint32_t sample;
   size_t sample_count = 0;
 
+  if (s->state == DISABLED)
+    return;
+
   for (size_t i = 0; i < num_samples; i += stride) {
     if (subtype == IEC_61883_IIDC_SUBTYPE) {
         sample = __builtin_bswap32(*((uint32_t *)sample_ptr));
@@ -274,4 +277,11 @@ audio_output_fifo_handle_buf_ctl(chanend buf_ctl,
     default:
       break;
     }
+}
+
+ofifo_state_t
+audio_output_fifo_get_state(buffer_handle_t s0, unsigned index)
+{
+    ofifo_t *s = (ofifo_t *)((struct output_finfo *)s0)->p_buffer[index];
+    return s->state;
 }

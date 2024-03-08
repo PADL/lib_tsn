@@ -238,4 +238,7 @@ audio_output_fifo_handle_buf_ctl(chanend buf_ctl,
                                  REFERENCE_PARAM(int, buf_ctl_notified),
                                  timer tmr);
 
+ofifo_state_t
+audio_output_fifo_get_state(buffer_handle_t s0, unsigned index);
+
 #endif

@@ -133,8 +133,6 @@ static int avb_1722_listener_process_packet_61883(
         sample_ptr += sample_length_32;
     }
 
-//    assert(sample_ptr == (uint8_t *)pAVBHdr + AVB_TP_HDR_SIZE + AVB_CIP_HDR_SIZE + num_channels * sample_length_32);
-
     return 1;
 }
 #endif /* AVB_1722_FORMAT_61883_6 */
@@ -171,7 +169,6 @@ static int avb_1722_listener_process_packet_aaf(
         return 0;
     }
 
-    // FIXME: do we want this to be able to change with each packet? or just the first?
     uint16_t cpf = (pAVBHdr->gateway_info[1] & 0x3) << 8 | (pAVBHdr->gateway_info[2]);
     stream_info->num_channels_in_payload = cpf;
 
@@ -200,8 +197,10 @@ static int avb_1722_listener_process_packet_aaf(
 
     uint8_t bit_depth = pAVBHdr->gateway_info[3];
     uint32_t valid_mask = (bit_depth >= 32) ? 0xffffffff : (1 << bit_depth) - 1;
+    size_t num_channels = stream_info->num_channels < stream_info->num_channels_in_payload
+        ? stream_info->num_channels : stream_info->num_channels_in_payload;
 
-    for (size_t i = 0; i < stream_info->num_channels; i++) {
+    for (size_t i = 0; i < num_channels; i++) {
         if (map[i] >= 0)
             audio_output_fifo_strided_push(h, map[i], sample_ptr, sample_length,
                                            cpf, num_samples_in_payload,
