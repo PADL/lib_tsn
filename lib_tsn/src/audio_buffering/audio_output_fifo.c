@@ -195,7 +195,7 @@ audio_output_fifo_strided_push(buffer_handle_t s0,
         *wrptr = sample & valid_mask;
         wrptr = new_wrptr;
     } else {
-        debug_printf("audio_output_fifo_strided_push: overflow index %u\n", index);
+        // debug_printf("audio_output_fifo_strided_push: overflow index %u\n", index);
     }
   }
 
