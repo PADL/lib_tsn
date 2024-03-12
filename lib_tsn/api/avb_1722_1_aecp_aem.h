@@ -214,7 +214,7 @@ typedef struct {
 #define AECP_STREAM_INFO_FLAGS_EX_REGISTERING (0x00000001)
 
 typedef struct {
-    avb_1722_1_aem_getset_stream_info_t stream_info;
+    avb_1722_1_aem_getset_stream_info_t info;
     uint8_t flags_ex[4];
     uint8_t pbsta_acmpsta;
     uint8_t reserved3[3];

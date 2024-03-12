@@ -286,10 +286,10 @@ unsafe void process_aem_cmd_getset_stream_format(avb_1722_1_aecp_packet_t *unsaf
                                                  REFERENCE_PARAM(uint8_t, status),
                                                  uint16_t command_type,
                                                  CLIENT_INTERFACE(avb_interface, i_avb)) {
-    avb_1722_1_aem_getset_stream_format_t *cmd =
-        (avb_1722_1_aem_getset_stream_format_t *)(pkt->data.aem.command.payload);
-    uint16_t stream_index = ntoh_16(cmd->descriptor_id);
-    uint16_t desc_type = ntoh_16(cmd->descriptor_type);
+    avb_1722_1_aem_get_stream_info_ex_t *cmd =
+        (avb_1722_1_aem_get_stream_info_ex_t *)(pkt->data.aem.command.payload);
+    uint16_t stream_index = ntoh_16(cmd->info.descriptor_id);
+    uint16_t desc_type = ntoh_16(cmd->info.descriptor_type);
     enum avb_stream_format_t format;
     int rate;
     int channels;
@@ -309,10 +309,13 @@ unsafe void process_aem_cmd_getset_stream_format(avb_1722_1_aecp_packet_t *unsaf
     }
 
     if (command_type == AECP_AEM_CMD_GET_STREAM_FORMAT) {
-        get_stream_format_field(stream, cmd->stream_format);
+        get_stream_format_field(stream, cmd->info.stream_format);
+        memset(cmd->flags_ex, 0, 4);
+        cmd->pbsta_acmpsta = 0;
+        memset(cmd->reserved3, 0, 3);
     } else // AECP_AEM_CMD_SET_STREAM_FORMAT
     {
-        if (!unpack_stream_format(cmd->stream_format, format, rate, channels)) {
+        if (!unpack_stream_format(cmd->info.stream_format, format, rate, channels)) {
             status = AECP_AEM_STATUS_BAD_ARGUMENTS;
             return;
         }

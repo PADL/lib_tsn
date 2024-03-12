@@ -785,7 +785,10 @@ static void process_avb_1722_1_aecp_aem_msg(avb_1722_1_aecp_packet_t *pkt,
         case AECP_AEM_CMD_SET_STREAM_FORMAT: // Fallthrough intentional
         {
             process_aem_cmd_getset_stream_format(pkt, &status, command_type, i_avb_api);
-            cd_len = sizeof(avb_1722_1_aem_getset_stream_format_t);
+            if (command_type == AECP_AEM_CMD_GET_STREAM_FORMAT)
+                cd_len = sizeof(avb_1722_1_aem_get_stream_info_ex_t);
+            else
+                cd_len = sizeof(avb_1722_1_aem_getset_stream_format_t);
             break;
         }
         case AECP_AEM_CMD_GET_SAMPLING_RATE:
@@ -1069,12 +1072,7 @@ void avb_1722_1_aecp_aem_periodic(CLIENT_INTERFACE(ethernet_tx_if, i_eth)) {
             } else {
                 entity_acquired_status = AEM_ENTITY_ACQUIRED;
             }
-            for (int i = 0; i < 8; i++) {
-                acquired_controller_guid.c[7 - i] = pending_controller_guid.c[7 - i];
-                // pkt->data.aem.command.acquire_entity_cmd.owner_guid[i] =
-                // acquired_controller_guid.c[7-i] =
-                // pending_controller_guid[7-i];
-            }
+            acquired_controller_guid = pending_controller_guid;
             debug_printf("1722.1 Controller %x%x acquired entity after timeout\n",
                          acquired_controller_guid.l << 32, acquired_controller_guid.l);
 
