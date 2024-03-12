@@ -2,6 +2,8 @@
 #ifndef AVB_1722_1_AECPDU_H_
 #define AVB_1722_1_AECPDU_H_
 
+#include <inttypes.h>
+
 #include "avb_1722_1_protocol.h"
 #include "avb_1722_1_default_conf.h"
 #include "avb_1722_1_aecp_aem.h"
@@ -22,8 +24,8 @@
  * 1722.1 AECP AEM command format
  */
 typedef struct {
-    unsigned char uflag_command_type;
-    unsigned char command_type;
+    uint8_t uflag_command_type;
+    uint8_t command_type;
     union {
         avb_1722_1_aem_read_descriptor_command_t read_descriptor_cmd;
         avb_1722_1_aem_read_descriptor_response_t read_descriptor_resp;
@@ -31,7 +33,9 @@ typedef struct {
         avb_1722_1_aem_lock_entity_command_t lock_entity_cmd;
         avb_1722_1_aem_get_avb_info_command_t get_avb_info_cmd;
         avb_1722_1_aem_get_avb_info_response_t get_avb_info_resp;
-        unsigned char payload[512];
+        avb_1722_1_aem_register_unsolicited_notification_t register_unsolicited_notification_req;
+        avb_1722_1_aem_register_unsolicited_notification_t register_unsolicited_notification_resp;
+        uint8_t payload[512];
     } command;
 } avb_1722_1_aecp_aem_msg_t;
 
@@ -39,26 +43,26 @@ typedef struct {
  * 1722.1 AECP Address access format
  */
 typedef struct {
-    unsigned char tlv_count[2];
-    unsigned char mode_length[2];
-    unsigned char address[8];
-    unsigned char data[514-8-2-2];
+    uint8_t tlv_count[2];
+    uint8_t mode_length[2];
+    uint8_t address[8];
+    uint8_t data[514-8-2-2];
 } avb_1722_1_aecp_address_access_t;
 
 /**
  * 1722.1 AECP Legacy AV/C command format
  */
 typedef struct {
-    unsigned char avc_length[2];
-    unsigned char avc_command_response[512];
+    uint8_t avc_length[2];
+    uint8_t avc_command_response[512];
 } avb_1722_1_aecp_avc_t;
 
 /**
  * 1722.1 AECP Vendor specific command format
  */
 typedef struct {
-    unsigned char protocol_id[6];
-    unsigned char payload_data[1];
+    uint8_t protocol_id[6];
+    uint8_t payload_data[1];
 } avb_1722_1_aecp_vendor_t;
 
 /**
@@ -68,15 +72,15 @@ typedef struct {
  */
 typedef struct {
     avb_1722_1_packet_header_t header;
-    unsigned char target_guid[8];
-    unsigned char controller_guid[8];
-    unsigned char sequence_id[2];
+    uint8_t target_guid[8];
+    uint8_t controller_guid[8];
+    uint8_t sequence_id[2];
     union {
         avb_1722_1_aecp_aem_msg_t aem;
         avb_1722_1_aecp_address_access_t address;
         avb_1722_1_aecp_avc_t avc;
         avb_1722_1_aecp_vendor_t vendor;
-        unsigned char payload[514];
+        uint8_t payload[514];
     } data;
 } avb_1722_1_aecp_packet_t;
 

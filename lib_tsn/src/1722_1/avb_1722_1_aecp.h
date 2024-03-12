@@ -21,7 +21,8 @@ void process_avb_1722_1_aecp_packet(unsigned char src_addr[6],
                                     int num_packet_bytes,
                                     CLIENT_INTERFACE(ethernet_tx_if, i_eth),
                                     CLIENT_INTERFACE(avb_interface, i_avb_api),
-                                    CLIENT_INTERFACE(avb_1722_1_control_callbacks, i_1722_1_entity));
+                                    CLIENT_INTERFACE(avb_1722_1_control_callbacks, i_1722_1_entity),
+                                    chanend c_ptp);
 #ifdef __XC__
 }
 #endif

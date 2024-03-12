@@ -34,7 +34,8 @@ void avb_process_1722_control_packet(unsigned int buf[],
                                     eth_packet_type_t packet_type,
                                     client interface ethernet_tx_if i_eth,
                                     client interface avb_interface i_avb,
-                                    client interface avb_1722_1_control_callbacks i_1722_1_entity);
+                                    client interface avb_1722_1_control_callbacks i_1722_1_entity,
+                                    chanend c_ptp);
 
 /** Process an AVB SRP control packet.
 
@@ -98,5 +99,8 @@ unsigned avb_get_sink_stream_index_from_pointer(avb_sink_info_t *unsafe p);
 
 unsigned avb_get_source_stream_index_from_stream_id(unsigned int stream_id[2]);
 unsigned avb_get_sink_stream_index_from_stream_id(unsigned int stream_id[2]);
+
+int get_avb_ptp_gm(chanend ptp, uint8_t a0[8]);
+int get_avb_ptp_port_pdelay(chanend ptp, int srcport, unsigned *pdelay);
 
 #endif // _avb_internal_h_

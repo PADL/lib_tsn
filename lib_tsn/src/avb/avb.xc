@@ -20,6 +20,7 @@
 #if AVB_ENABLE_1722_1
 #include "avb_1722_1.h"
 #include "avb_1722_1_adp.h"
+#include "gptp_internal.h"
 #endif
 
 //#define AVB_TRANSMIT_BEFORE_RESERVATION 1
@@ -631,7 +632,8 @@ void avb_process_1722_control_packet(unsigned int buf0[],
                                      eth_packet_type_t packet_type,
                                      client interface ethernet_tx_if i_eth,
                                      client interface avb_interface i_avb,
-                                     client interface avb_1722_1_control_callbacks i_1722_1_entity) {
+                                     client interface avb_1722_1_control_callbacks i_1722_1_entity,
+                                     chanend c_ptp) {
 
   if (packet_type == ETH_IF_STATUS) {
     if (((uint8_t *)buf0)[0] == ETHERNET_LINK_UP) {
@@ -671,7 +673,7 @@ void avb_process_1722_control_packet(unsigned int buf0[],
     switch (etype) {
       case AVB_1722_ETHERTYPE:
 #if AVB_ENABLE_1722_1
-        avb_1722_1_process_packet(&buf[eth_hdr_size], len, ethernet_hdr->src_addr, i_eth, i_avb, i_1722_1_entity);
+        avb_1722_1_process_packet(&buf[eth_hdr_size], len, ethernet_hdr->src_addr, i_eth, i_avb, i_1722_1_entity, c_ptp);
 #endif
 #if AVB_ENABLE_1722_MAAP
         avb_1722_maap_process_packet(&buf[eth_hdr_size], len, ethernet_hdr->src_addr, i_eth);
@@ -681,17 +683,17 @@ void avb_process_1722_control_packet(unsigned int buf0[],
   }
 }
 
-int get_avb_ptp_gm(uint8_t a0[])
+int get_avb_ptp_gm(chanend c_ptp, uint8_t a0[8])
 {
-  // ptp_get_current_grandmaster(*c_ptp, a0);
+  ptp_get_current_grandmaster(c_ptp, a0);
   return 1;
 }
 
-int get_avb_ptp_port_pdelay(int srcport, unsigned *pdelay)
+int get_avb_ptp_port_pdelay(chanend c_ptp, int srcport, unsigned *pdelay)
 {
   if (srcport == 0)
   {
-    // ptp_get_propagation_delay(*c_ptp, pdelay);
+    ptp_get_propagation_delay(c_ptp, pdelay);
     return 1;
   }
   else

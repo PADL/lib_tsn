@@ -64,7 +64,8 @@ void avb_1722_1_process_packet(unsigned char buf[len], unsigned len,
                                 unsigned char src_addr[6],
                                 client interface ethernet_tx_if i_eth,
                                 CLIENT_INTERFACE(avb_interface, i_avb_api),
-                                CLIENT_INTERFACE(avb_1722_1_control_callbacks, i_1722_1_entity))
+                                CLIENT_INTERFACE(avb_1722_1_control_callbacks, i_1722_1_entity),
+                                chanend c_ptp)
 {
     avb_1722_1_packet_header_t *pkt = (avb_1722_1_packet_header_t *) &buf[0];
     unsigned subtype = GET_1722_1_SUBTYPE(pkt);
@@ -79,7 +80,7 @@ void avb_1722_1_process_packet(unsigned char buf[len], unsigned len,
         }
         return;
     case DEFAULT_1722_1_AECP_SUBTYPE:
-        process_avb_1722_1_aecp_packet(src_addr, (avb_1722_1_aecp_packet_t*)pkt, len, i_eth, i_avb_api, i_1722_1_entity);
+        process_avb_1722_1_aecp_packet(src_addr, (avb_1722_1_aecp_packet_t*)pkt, len, i_eth, i_avb_api, i_1722_1_entity, c_ptp);
         return;
     case DEFAULT_1722_1_ACMP_SUBTYPE:
         if (datalen == AVB_1722_1_ACMP_CD_LENGTH)
@@ -185,7 +186,7 @@ void avb_1722_1_maap_srp_task(client interface avb_interface i_avb,
         ethernet_packet_info_t packet_info;
         i_eth_rx.get_packet(packet_info, (char *)buf, ETHERNET_MAX_PACKET_SIZE);
         avb_process_srp_control_packet(i_avb, buf, packet_info.len, packet_info.type, i_eth_tx, packet_info.src_ifnum);
-        avb_process_1722_control_packet(buf, packet_info.len, packet_info.type, i_eth_tx, i_avb, i_1722_1_entity);
+        avb_process_1722_control_packet(buf, packet_info.len, packet_info.type, i_eth_tx, i_avb, i_1722_1_entity, c_ptp);
         break;
       }
       // Periodic processing
@@ -257,7 +258,7 @@ void avb_1722_1_maap_task(otp_ports_t &?otp_ports,
         ethernet_packet_info_t packet_info;
         i_eth_rx.get_packet(packet_info, (char *)buf, AVB_1722_1_PACKET_SIZE_WORDS * 4);
 
-        avb_process_1722_control_packet(buf, packet_info.len, packet_info.type, i_eth_tx, i_avb, i_1722_1_entity);
+        avb_process_1722_control_packet(buf, packet_info.len, packet_info.type, i_eth_tx, i_avb, i_1722_1_entity, c_ptp);
         break;
       }
       // Periodic processing

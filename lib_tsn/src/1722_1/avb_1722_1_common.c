@@ -1,5 +1,6 @@
 // Copyright (c) 2011-2017, XMOS Ltd, All rights reserved
 #include <print.h>
+#include <string.h>
 #include <xclib.h>
 #include "avb_1722_common.h"
 #include "avb_1722_1_common.h"
@@ -18,7 +19,7 @@ void print_guid_ln(const_guid_ref_t g)
     }
 }
 
-void print_mac_ln(unsigned char c[6])
+void print_mac_ln(unsigned char c[MACADDR_NUM_BYTES])
 {
     for (int i=0; i<6; i++)
     {
@@ -30,7 +31,7 @@ void print_mac_ln(unsigned char c[6])
     }
 }
 
-unsigned compare_guid(unsigned char a[6], const_guid_ref_t b)
+unsigned compare_guid(unsigned char a[8], const_guid_ref_t b)
 {
     for (int i=0; i < 8; i++)
     {
@@ -38,6 +39,24 @@ unsigned compare_guid(unsigned char a[6], const_guid_ref_t b)
     }
     return 1;
 }
+
+void zero_guid(guid_ref_t guid)
+{
+    memset(guid->c, 0, 8);
+}
+
+void hton_guid(uint8_t dst[8], const_guid_ref_t src)
+{
+    for (size_t i = 0; i < 8; i++)
+        dst[i] = src->c[7 - i];
+}
+
+void ntoh_guid(guid_ref_t dst, const uint8_t src[8])
+{
+    for (size_t i = 0; i < 8; i++)
+        dst->c[i] = src[7 - i];
+}
+
 
 int qlog2(unsigned n)
 {

@@ -23,8 +23,10 @@ typedef union {
 } guid_t, stream_t, gmid_t;
 
 #ifndef __XC__
+typedef guid_t *guid_ref_t;
 typedef const guid_t * const const_guid_ref_t;
 #else
+typedef guid_t &guid_ref_t;
 typedef const guid_t & const_guid_ref_t;
 #endif
 

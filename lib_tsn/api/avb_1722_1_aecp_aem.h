@@ -222,6 +222,16 @@ typedef struct {
     uint8_t descriptor_id[2];
 } avb_1722_1_aem_startstop_streaming_t;
 
+/* 7.4.37.1 REGISTER_UNSOLICITED_NOTIFICATION */
+
+typedef struct {
+    uint8_t flags[4];
+} avb_1722_1_aem_register_unsolicited_notification_t;
+
+#define AECP_REGISTER_UNSOLICITED_NOTIFICATION_TIME_LIMITED (0x80000000)
+
+/* 7.4.38.1 DEREGISTER_UNSOLICITED_NOTIFICATION */
+
 /* 7.4.39.1 IDENTIFY_NOTIFICATION */
 typedef struct {
     uint8_t descriptor_type[2];
