@@ -211,6 +211,15 @@ typedef struct {
 
 #define AEM_MAX_CONTROL_VALUES_LENGTH_BYTES 508
 
+#define AECP_STREAM_INFO_FLAGS_EX_REGISTERING (0x00000001)
+
+typedef struct {
+    avb_1722_1_aem_getset_stream_info_t stream_info;
+    uint8_t flags_ex[4];
+    uint8_t pbsta_acmpsta;
+    uin8_t reserved3[3];
+} avb_1722_1_aem_get_stream_info_ex_t;
+
 /* 7.4.25.1 SET_CONTROL */
 typedef struct {
     uint8_t descriptor_type[2];
@@ -253,7 +262,7 @@ typedef struct {
     uint8_t flags[4];
 } avb_1722_1_aem_register_unsolicited_notification_t;
 
-#define AECP_REGISTER_UNSOLICITED_NOTIFICATION_TIME_LIMITED (0x80000000)
+#define AECP_REGISTER_UNSOLICITED_NOTIFICATION_TIME_LIMITED (0x00000001)
 
 /* 7.4.38.1 DEREGISTER_UNSOLICITED_NOTIFICATION */
 
