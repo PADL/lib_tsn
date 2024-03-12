@@ -217,7 +217,7 @@ typedef struct {
     avb_1722_1_aem_getset_stream_info_t stream_info;
     uint8_t flags_ex[4];
     uint8_t pbsta_acmpsta;
-    uin8_t reserved3[3];
+    uint8_t reserved3[3];
 } avb_1722_1_aem_get_stream_info_ex_t;
 
 /* 7.4.25.1 SET_CONTROL */
