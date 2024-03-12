@@ -92,7 +92,7 @@ void avb_1722_1_process_packet(uint8_t buf[len],
 void avb_1722_1_periodic(client interface ethernet_tx_if i_eth,
                          chanend c_ptp,
                          client interface avb_interface i_avb) {
-    avb_1722_1_adp_advertising_periodic(i_eth, c_ptp);
+    avb_1722_1_adp_advertising_periodic(i_eth, c_ptp, i_avb);
 #if (AVB_1722_1_CONTROLLER_ENABLED)
     avb_1722_1_adp_discovery_periodic(i_eth, i_avb);
     avb_1722_1_acmp_controller_periodic(i_eth, i_avb);

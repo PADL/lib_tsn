@@ -15,6 +15,7 @@
 #include "avb_internal.h"
 #include "aem_descriptor_types.h"
 #include "aem_descriptor_structs.h"
+#include "gptp_internal.h"
 
 static int sfc_from_sampling_rate(int rate) {
     switch (rate) {
@@ -539,15 +540,44 @@ unsafe void process_aem_cmd_get_avb_info(avb_1722_1_aecp_packet_t *unsafe pkt,
         (avb_1722_1_aem_get_avb_info_response_t *)(pkt->data.aem.command.payload);
     uint16_t desc_id = ntoh_16(cmd->descriptor_id);
 
-    if (desc_id == 0) {
-        unsigned int pdelay;
-        get_avb_ptp_gm(c_ptp, &cmd->as_grandmaster_id[0]);
-        get_avb_ptp_port_pdelay(c_ptp, 0, &pdelay);
-        hton_32(cmd->propagation_delay, pdelay);
-        hton_16(cmd->msrp_mappings_count, 1);
-        cmd->msrp_mappings[0] = AVB_SRP_SRCLASS_DEFAULT;
-        cmd->msrp_mappings[1] = AVB_SRP_TSPEC_PRIORITY_DEFAULT;
-        cmd->msrp_mappings[2] = (AVB_DEFAULT_VLAN >> 8) & 0xff;
-        cmd->msrp_mappings[3] = (AVB_DEFAULT_VLAN & 0xff);
+    if (desc_id != 0) {
+        status = AECP_AEM_STATUS_NO_SUCH_DESCRIPTOR;
+        return;
     }
+
+    unsigned int pdelay;
+    get_avb_ptp_gm(c_ptp, &cmd->as_grandmaster_id[0]);
+    get_avb_ptp_port_pdelay(c_ptp, 0, &pdelay);
+    hton_32(cmd->propagation_delay, pdelay);
+    hton_16(cmd->msrp_mappings_count, 1);
+    cmd->msrp_mappings[0] = AVB_SRP_SRCLASS_DEFAULT;
+    cmd->msrp_mappings[1] = AVB_SRP_TSPEC_PRIORITY_DEFAULT;
+    cmd->msrp_mappings[2] = (AVB_DEFAULT_VLAN >> 8) & 0xff;
+    cmd->msrp_mappings[3] = (AVB_DEFAULT_VLAN & 0xff);
+}
+
+unsafe void process_aem_cmd_get_as_path(avb_1722_1_aecp_packet_t *unsafe pkt,
+                                        uint8_t &status,
+                                        chanend c_ptp) {
+    avb_1722_1_aem_get_as_path_t *cmd =
+        (avb_1722_1_aem_get_as_path_t *)(pkt->data.aem.command.payload);
+    uint16_t interface_id = ntoh_16(cmd->descriptor_index);
+    n64_t pathSequence[PTP_MAXIMUM_PATH_TRACE_TLV];
+    uint16_t count;
+
+    hton_16(cmd->count, 0);
+
+    if (interface_id != 0) {
+        status = AECP_AEM_STATUS_NO_SUCH_DESCRIPTOR;
+        return;
+    }
+
+    ptp_get_as_path(c_ptp, pathSequence, &count);
+    assert(count <= PTP_MAXIMUM_PATH_TRACE_TLV);
+
+    hton_16(cmd->count, count);
+
+    for (uint16_t i = 0; i < count; i++)
+        memcpy(&pkt->data.aem.command.payload[4 + i * GUID_NUM_BYTES],
+               &pathSequence[i * GUID_NUM_BYTES], GUID_NUM_BYTES);
 }

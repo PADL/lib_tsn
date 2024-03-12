@@ -1,4 +1,6 @@
 // Copyright (c) 2013-2017, XMOS Ltd, All rights reserved
+// Portions Copyright (c) 2024, PADL Software Pty Ltd, All rights reserved
+
 #include <string.h>
 #include <print.h>
 #include "avb_1722_common.h"
@@ -15,6 +17,9 @@
 #endif
 #include "avb_1722_1_app_hooks.h"
 #include "avb_1722_1.h"
+#if AVB_ENABLE_1722_1
+#include "avb_1722_1_aecp.h"
+#endif
 
 /* Inflight command defines */
 #define CONTROLLER 0
@@ -248,9 +253,11 @@ void avb_1722_1_acmp_talker_periodic(client interface ethernet_tx_if i_eth,
         } else {
             acmp_add_talker_stream_info();
 #if AVB_ENABLE_1722_1
+            unsigned unique_id = acmp_talker_rcvd_cmd_resp.talker_unique_id;
             /* Application hook */
-            avb_talker_on_listener_connect(avb, acmp_talker_rcvd_cmd_resp.talker_unique_id,
+            avb_talker_on_listener_connect(avb, unique_id,
                                            acmp_talker_rcvd_cmd_resp.listener_guid);
+            notify_talker_stream_changed(unique_id, i_eth, avb);
 #endif
             acmp_set_talker_response();
             acmp_send_response(ACMP_CMD_CONNECT_TX_RESPONSE, &acmp_talker_rcvd_cmd_resp,
@@ -271,6 +278,7 @@ void avb_1722_1_acmp_talker_periodic(client interface ethernet_tx_if i_eth,
             avb_talker_on_listener_disconnect(avb, unique_id,
                                               acmp_talker_rcvd_cmd_resp.listener_guid,
                                               acmp_talker_streams[unique_id].connection_count);
+            notify_talker_stream_changed(unique_id, i_eth, avb);
 #endif
             acmp_set_talker_response();
             acmp_send_response(ACMP_CMD_DISCONNECT_TX_RESPONSE, &acmp_talker_rcvd_cmd_resp,
@@ -361,6 +369,7 @@ void avb_1722_1_acmp_listener_periodic(client interface ethernet_tx_if i_eth,
                     avb, acmp_listener_rcvd_cmd_resp.listener_unique_id,
                     acmp_listener_rcvd_cmd_resp.talker_guid,
                     acmp_listener_rcvd_cmd_resp.stream_dest_mac, stream_id, my_guid);
+                notify_listener_stream_changed(acmp_listener_rcvd_cmd_resp.listener_unique_id, i_eth, avb);
 #endif
 
                 acmp_zero_listener_stream_info(acmp_listener_rcvd_cmd_resp.listener_unique_id);
@@ -412,6 +421,7 @@ void avb_1722_1_acmp_listener_periodic(client interface ethernet_tx_if i_eth,
                             acmp_listener_rcvd_cmd_resp.talker_guid,
                             acmp_listener_rcvd_cmd_resp.stream_dest_mac, stream_id,
                             acmp_listener_rcvd_cmd_resp.vlan_id, my_guid);
+                        notify_listener_stream_changed(acmp_listener_rcvd_cmd_resp.listener_unique_id, i_eth, avb);
 #endif
 
                         acmp_send_response(ACMP_CMD_CONNECT_RX_RESPONSE,

@@ -12,7 +12,9 @@ void avb_1722_1_adp_init();
 
 void process_avb_1722_1_adp_packet(REFERENCE_PARAM(avb_1722_1_adp_packet_t, pkt),
                                    CLIENT_INTERFACE(ethernet_tx_if, i_eth));
-void avb_1722_1_adp_advertising_periodic(CLIENT_INTERFACE(ethernet_tx_if, i_eth), chanend ptp);
+void avb_1722_1_adp_advertising_periodic(CLIENT_INTERFACE(ethernet_tx_if, i_eth),
+                                         chanend ptp,
+                                         CLIENT_INTERFACE(avb_interface, i_avb));
 #ifdef __XC__
 void avb_1722_1_adp_discovery_periodic(client interface ethernet_tx_if i_eth,
                                        client interface avb_interface avb);

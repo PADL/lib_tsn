@@ -8,6 +8,7 @@
 #include "avb_1722_1.h"
 #include "avb_1722_1_aecp_pdu.h"
 #include "avb_1722_1_aecp_aem.h"
+#include "aem_descriptor_types.h"
 #include "avb.h"
 #include "avb_1722_1_callbacks.h"
 #include "ethernet.h"
@@ -36,3 +37,37 @@ void abort_write_upgrade_image(void);
 int avb_write_upgrade_image_page(int address,
                                  uint8_t data[FLASH_PAGE_SIZE],
                                  REFERENCE_PARAM(uint16_t, status));
+
+void send_unsolicited_notifications_state_changed(uint16_t command_type,
+                                                  uint16_t stream_desc_type, // for AECP_AEM_CMD_GET_STREAM_INFO
+                                                  uint16_t stream_desc_id, // for AECP_AEM_CMD_GET_STREAM_INFO
+                                                  CLIENT_INTERFACE(ethernet_tx_if, i_eth),
+                                                  CLIENT_INTERFACE(avb_interface, i_avb_api),
+                                                  NULLABLE_RESOURCE(chanend, c_ptp));
+
+#ifdef __XC__
+static inline void notify_listener_stream_changed(uint16_t stream_desc_id,
+                                                  CLIENT_INTERFACE(ethernet_tx_if, i_eth),
+                                                  CLIENT_INTERFACE(avb_interface, i_avb_api)) {
+    send_unsolicited_notifications_state_changed(AECP_AEM_CMD_GET_STREAM_INFO, AEM_STREAM_INPUT_TYPE,
+                                                 stream_desc_id, i_eth, i_avb_api, null);
+}
+
+static inline void notify_talker_stream_changed(uint16_t stream_desc_id,
+                                                CLIENT_INTERFACE(ethernet_tx_if, i_eth),
+                                                CLIENT_INTERFACE(avb_interface, i_avb_api)) {
+    send_unsolicited_notifications_state_changed(AECP_AEM_CMD_GET_STREAM_INFO, AEM_STREAM_OUTPUT_TYPE,
+                                                 stream_desc_id, i_eth, i_avb_api, null);
+}
+
+static inline void notify_avb_info_changed(CLIENT_INTERFACE(ethernet_tx_if, i_eth),
+                                           chanend c_ptp,
+                                           CLIENT_INTERFACE(avb_interface, i_avb_api)) {
+    send_unsolicited_notifications_state_changed(AECP_AEM_CMD_GET_AVB_INFO, 0, 0, i_eth, i_avb_api, c_ptp);
+}
+
+static inline void notify_counters_changed(CLIENT_INTERFACE(ethernet_tx_if, i_eth),
+                                           CLIENT_INTERFACE(avb_interface, i_avb_api)) {
+    send_unsolicited_notifications_state_changed(AECP_AEM_CMD_GET_COUNTERS, 0, 0, i_eth, i_avb_api, null);
+}
+#endif

@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "gptp_config.h"
 #include "nettypes.h"
 
 #define PTP_ADJUST_PREC 30
@@ -11,7 +12,8 @@ enum ptp_cmd_t {
     PTP_GET_TIME_INFO_MOD64,
     PTP_GET_GRANDMASTER,
     PTP_GET_STATE,
-    PTP_GET_PDELAY
+    PTP_GET_PDELAY,
+    PTP_GET_AS_PATH
 };
 
 typedef enum ptp_port_role_t { PTP_MASTER, PTP_UNCERTAIN, PTP_SLAVE, PTP_DISABLED } ptp_port_role_t;
@@ -47,6 +49,10 @@ ptp_port_role_t ptp_get_state(chanend ptp_server);
  *
  **/
 void ptp_get_propagation_delay(chanend ptp_server, unsigned *pdelay);
+
+void ptp_get_as_path(chanend ptp_server,
+                     n64_t pathSequence[PTP_MAXIMUM_PATH_TRACE_TLV],
+                     uint16_t *count);
 
 void ptp_get_current_grandmaster(chanend ptp_server, uint8_t grandmaster[8]);
 

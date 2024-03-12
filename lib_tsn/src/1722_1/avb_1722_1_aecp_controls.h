@@ -61,3 +61,6 @@ unsafe void process_aem_cmd_get_avb_info(avb_1722_1_aecp_packet_t *unsafe pkt,
                                          CLIENT_INTERFACE(avb_interface, i_avb),
                                          chanend c_ptp);
  
+unsafe void process_aem_cmd_get_as_path(avb_1722_1_aecp_packet_t *unsafe pkt,
+                                        REFERENCE_PARAM(uint8_t, status),
+                                        chanend c_ptp);

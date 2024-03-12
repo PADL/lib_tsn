@@ -356,7 +356,9 @@ void avb_1722_1_adp_depart_immediately(client interface ethernet_tx_if i_eth) {
                       ETHERNET_ALL_INTERFACES);
 }
 
-void avb_1722_1_adp_advertising_periodic(client interface ethernet_tx_if i_eth, chanend ptp) {
+void avb_1722_1_adp_advertising_periodic(client interface ethernet_tx_if i_eth,
+                                         chanend ptp,
+                                         client interface avb_interface i_avb_api) {
     guid_t ptp_current;
 
     switch (adp_advertise_state) {
@@ -371,6 +373,7 @@ void avb_1722_1_adp_advertising_periodic(client interface ethernet_tx_if i_eth, 
 
     case ADP_ADVERTISE_ADVERTISE_0:
         avb_1722_1_adp_change_ptp_grandmaster(ptp_current.c);
+        notify_avb_info_changed(i_eth, ptp, i_avb_api);
         start_avb_timer(ptp_monitor_timer, 1); // Every second
         adp_advertise_state = ADP_ADVERTISE_ADVERTISE_1;
         [[fallthrough]];
@@ -406,6 +409,7 @@ void avb_1722_1_adp_advertising_periodic(client interface ethernet_tx_if i_eth, 
             ptp_get_current_grandmaster(ptp, ptp_current.c);
             if (gptp_grandmaster_id.l != ptp_current.l) {
                 avb_1722_1_adp_change_ptp_grandmaster(ptp_current.c);
+                notify_avb_info_changed(i_eth, ptp, i_avb_api);
                 adp_advertise_state = ADP_ADVERTISE_ADVERTISE_1;
             }
             start_avb_timer(ptp_monitor_timer, 1); // Every second

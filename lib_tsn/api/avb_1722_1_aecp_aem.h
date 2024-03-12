@@ -236,6 +236,13 @@ typedef struct {
     uint8_t reserved[2];
 } avb_1722_1_aem_getset_signal_selector_t;
 
+/* 7.4.41 GET_AS_PATH */
+typedef struct {
+    uint8_t descriptor_index[2];
+    uint8_t count[2];
+    uint8_t path_sequence[0];
+} avb_1722_1_aem_get_as_path_t;
+
 /* 7.4.42 GET_COUNTERS */
 typedef struct {
     uint8_t descriptor_type[2];

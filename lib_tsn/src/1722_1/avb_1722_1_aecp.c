@@ -695,6 +695,15 @@ static int is_notifiable_command_type_p(uint16_t command_type) {
     }
 }
 
+static inline size_t
+calculate_num_tx_bytes(size_t cd_len) {
+    size_t num_tx_bytes = sizeof(ethernet_hdr_t) +
+        AVB_1722_1_AECP_PAYLOAD_OFFSET + 2 /* u_cr_command_type */ + cd_len;
+    if (num_tx_bytes < 64)
+        num_tx_bytes = 64;
+    return num_tx_bytes;
+}
+
 static void process_avb_1722_1_aecp_aem_msg(avb_1722_1_aecp_packet_t *pkt,
                                             uint8_t src_addr[MACADDR_NUM_BYTES],
                                             int message_type,
@@ -709,7 +718,6 @@ static void process_avb_1722_1_aecp_aem_msg(avb_1722_1_aecp_packet_t *pkt,
     uint8_t status = AECP_AEM_STATUS_SUCCESS;
     size_t cd_len = 0;
     uint8_t reboot = 0;
-    uint8_t force_send = 0;
 
     if (message_type == AECP_CMD_AEM_COMMAND) {
         if (compare_guid(pkt->target_guid, &my_guid) == 0)
@@ -795,13 +803,11 @@ static void process_avb_1722_1_aecp_aem_msg(avb_1722_1_aecp_packet_t *pkt,
         }
         case AECP_AEM_CMD_REGISTER_UNSOLICITED_NOTIFICATION:
             process_aem_cmd_register_unsolicited_notification(pkt, src_addr, &status);
-            cd_len = 0; // FIXME: return flags
-            force_send = 1;
+            cd_len = AVB_1722_1_AECP_PAYLOAD_OFFSET;
             break;
         case AECP_AEM_CMD_DEREGISTER_UNSOLICITED_NOTIFICATION:
             process_aem_cmd_deregister_unsolicited_notification(pkt, src_addr, &status);
-            cd_len = 0;
-            force_send = 1;
+            cd_len = AVB_1722_1_AECP_PAYLOAD_OFFSET;
             break;
         case AECP_AEM_CMD_GET_CONTROL:
         case AECP_AEM_CMD_SET_CONTROL: {
@@ -813,6 +819,12 @@ static void process_avb_1722_1_aecp_aem_msg(avb_1722_1_aecp_packet_t *pkt,
         case AECP_AEM_CMD_SET_SIGNAL_SELECTOR: {
             process_aem_cmd_getset_signal_selector(pkt, &status, command_type, i_1722_1_entity);
             cd_len = sizeof(avb_1722_1_aem_getset_signal_selector_t);
+            break;
+        }
+        case AECP_AEM_CMD_GET_AS_PATH: {
+            avb_1722_1_aem_get_as_path_t *cmd = (avb_1722_1_aem_get_as_path_t *)pkt->data.aem.command.payload;
+            process_aem_cmd_get_as_path(pkt, &status, c_ptp);
+            cd_len = sizeof(avb_1722_1_aem_get_as_path_t) + ntoh_16(cmd->count) * GUID_NUM_BYTES;
             break;
         }
         case AECP_AEM_CMD_GET_COUNTERS: {
@@ -844,9 +856,8 @@ static void process_avb_1722_1_aecp_aem_msg(avb_1722_1_aecp_packet_t *pkt,
         }
 
         // Send a response if required
-        if (cd_len > 0 || force_send) {
+        if (cd_len > 0)
             avb_1722_1_create_aecp_aem_response(src_addr, status, cd_len, pkt);
-        }
     } else // AECP_CMD_AEM_RESPONSE
     {
         switch (command_type) {
@@ -877,13 +888,8 @@ static void process_avb_1722_1_aecp_aem_msg(avb_1722_1_aecp_packet_t *pkt,
         }
     }
 
-    if (cd_len > 0 || force_send) {
-        int num_tx_bytes = cd_len + 2 + // U Flag + command type
-                           AVB_1722_1_AECP_PAYLOAD_OFFSET + sizeof(ethernet_hdr_t);
-
-        if (num_tx_bytes < 64)
-            num_tx_bytes = 64;
-
+    if (cd_len > 0) {
+        size_t num_tx_bytes = calculate_num_tx_bytes(cd_len);
         eth_send_packet(i_eth, (char *)avb_1722_1_buf, num_tx_bytes, ETHERNET_ALL_INTERFACES);
 
         // then send to all notifiers
@@ -1089,18 +1095,22 @@ static void process_aem_cmd_register_unsolicited_notification(avb_1722_1_aecp_pa
     // TODO: support flags for timed registrations
     for (size_t i = 0; i < unsolicited_notification_controllers_count; i++) {
         if (compare_guid(pkt->controller_guid, &unsolicited_notification_controllers[i])) {
+#if AVB_1722_1_AECP_DEBUG_NOTIFICATIONS
             debug_printf("process_aem_cmd_register_unsolicited_notification: "
-                         "controller %08x%08x already registered\n",
+                         "controller %08x:%08x already registered\n",
                          unsolicited_notification_controllers[i].l << 32,
                          unsolicited_notification_controllers[i].l);
+#endif
             *status = AECP_AEM_STATUS_SUCCESS;
             return;
         }
     }
 
     if (unsolicited_notification_controllers_count == AVB_1722_1_MAX_NOTIFICATION_CONTROLLERS) {
+#if AVB_1722_1_AECP_DEBUG_NOTIFICATIONS
         debug_printf("process_aem_cmd_register_unsolicited_notification: "
                      "notification controller limit reached\n");
+#endif
         *status = AECP_AEM_STATUS_NO_RESOURCES;
         return;
     }
@@ -1110,12 +1120,14 @@ static void process_aem_cmd_register_unsolicited_notification(avb_1722_1_aecp_pa
     memcpy(unsolicited_notification_controller_macs[unsolicited_notification_controllers_count],
            src_addr, MACADDR_NUM_BYTES);
 
+#if AVB_1722_1_AECP_DEBUG_NOTIFICATIONS
     debug_printf("process_aem_cmd_register_unsolicited_notification: "
-                 "registered controller %08x%08x in slot %d\n",
+                 "registered controller %08x:%08x in slot %u\n",
                  unsolicited_notification_controllers[unsolicited_notification_controllers_count].l
                      << 32,
                  unsolicited_notification_controllers[unsolicited_notification_controllers_count].l,
-                 unsolicited_notification_controllers_count);
+                 (unsigned int)unsolicited_notification_controllers_count);
+#endif
 
     unsolicited_notification_controllers_count++;
 }
@@ -1139,18 +1151,22 @@ static void process_aem_cmd_deregister_unsolicited_notification(avb_1722_1_aecp_
     }
 
     if (*status != AECP_AEM_STATUS_SUCCESS) {
+#if AVB_1722_1_AECP_DEBUG_NOTIFICATIONS
         guid_t guid;
         ntoh_guid(&guid, pkt->controller_guid);
         debug_printf("process_aem_cmd_deregister_unsolicited_notification: "
-                     "controller %08x%08x not registered\n",
+                     "controller %08x:%08x not registered\n",
                      guid.l << 32, guid.l);
+#endif
         return;
     }
 
+#if AVB_1722_1_AECP_DEBUG_NOTIFICATIONS
     debug_printf("process_aem_cmd_deregister_unsolicited_notification: "
-                 "deregistered controller %08x%08x from slot %d\n",
+                 "deregistered controller %08x:%08x from slot %u\n",
                  unsolicited_notification_controllers[i].l << 32,
-                 unsolicited_notification_controllers[i].l, i);
+                 unsolicited_notification_controllers[i].l, (unsigned int)i);
+#endif
 
     memmove(&unsolicited_notification_controllers[i], &unsolicited_notification_controllers[i + 1],
             sizeof(guid_t) * (unsolicited_notification_controllers_count - i - 1));
@@ -1182,10 +1198,12 @@ static void send_unsolicited_notifications(CLIENT_INTERFACE(ethernet_tx_if, i_et
         hton_guid(pkt->controller_guid, &acquired_controller_guid);
         memcpy(hdr->dest_addr, acquired_controller_mac, MACADDR_NUM_BYTES);
         eth_send_packet(i_eth, (char *)avb_1722_1_buf, num_tx_bytes, ETHERNET_ALL_INTERFACES);
+#if AVB_1722_1_AECP_DEBUG_NOTIFICATIONS
         debug_printf("send_unsolicited_notifications: notified 1722.1 "
-                     "acquiring controller %08x%08x for command %u\n",
+                     "acquiring controller %08x:%08x for command %u\n",
                      acquired_controller_guid.l << 32, acquired_controller_guid.l,
                      AEM_MSG_GET_COMMAND_TYPE(aem_msg));
+#endif
     }
 
     for (size_t i = 0; i < unsolicited_notification_controllers_count; i++) {
@@ -1200,19 +1218,20 @@ static void send_unsolicited_notifications(CLIENT_INTERFACE(ethernet_tx_if, i_et
         hton_guid(pkt->controller_guid, &unsolicited_notification_controllers[i]);
         memcpy(hdr->dest_addr, unsolicited_notification_controller_macs[i], MACADDR_NUM_BYTES);
         eth_send_packet(i_eth, (char *)avb_1722_1_buf, num_tx_bytes, ETHERNET_ALL_INTERFACES);
+#if AVB_1722_1_AECP_DEBUG_NOTIFICATIONS
         debug_printf("send_unsolicited_notifications[%d]: notified 1722.1 "
-                     "controller %08x%08x for command %u\n",
+                     "controller %08x:%08x for command %u\n",
                      i, unsolicited_notification_controllers[i].l << 32,
                      unsolicited_notification_controllers[i].l, AEM_MSG_GET_COMMAND_TYPE(aem_msg));
+#endif
     }
 }
 
 void send_unsolicited_notifications_state_changed(uint16_t command_type,
-                                                  uint16_t stream_desc_type,
-                                                  uint16_t stream_desc_id,
+                                                  uint16_t stream_desc_type, // for AECP_AEM_CMD_GET_STREAM_INFO
+                                                  uint16_t stream_desc_id, // for AECP_AEM_CMD_GET_STREAM_INFO
                                                   CLIENT_INTERFACE(ethernet_tx_if, i_eth),
                                                   CLIENT_INTERFACE(avb_interface, i_avb_api),
-                                                  CLIENT_INTERFACE(avb_1722_1_control_callbacks, i_1722_1_entity),
                                                   chanend c_ptp) {
     avb_1722_1_aecp_packet_t pkt;
     size_t cd_len;
@@ -1221,6 +1240,11 @@ void send_unsolicited_notifications_state_changed(uint16_t command_type,
     memset(&pkt, 0, sizeof(pkt));
     memcpy(pkt.target_guid, &my_guid, sizeof(my_guid));
     memset(pkt.controller_guid, 0xff, sizeof(pkt.controller_guid));
+
+#if AVB_1722_1_AECP_DEBUG_NOTIFICATIONS
+    debug_printf("send_unsolicited_notifications_state_changed: type %u stream_desc_type %u stream_desc_id %u\n",
+                 command_type, stream_desc_type, stream_desc_id);
+#endif
 
     switch (command_type) {
     case AECP_AEM_CMD_GET_STREAM_INFO: {
@@ -1236,13 +1260,18 @@ void send_unsolicited_notifications_state_changed(uint16_t command_type,
         process_aem_cmd_get_avb_info(&pkt, &status, i_avb_api, c_ptp);
         cd_len = sizeof(avb_1722_1_aem_get_avb_info_response_t);
         break;
-    case AECP_AEM_CMD_GET_AS_PATH:
+    case AECP_AEM_CMD_GET_AS_PATH: {
+        avb_1722_1_aem_get_as_path_t *cmd = (avb_1722_1_aem_get_as_path_t *)pkt.data.aem.command.payload;
+        process_aem_cmd_get_as_path(&pkt, &status, c_ptp);
+        cd_len = sizeof(avb_1722_1_aem_get_as_path_t) + ntoh_16(cmd->count) * GUID_NUM_BYTES;
         break;
-    case AECP_AEM_CMD_GET_COUNTERS:
+    }
+     case AECP_AEM_CMD_GET_COUNTERS:
         process_aem_cmd_get_counters(&pkt, &status, i_avb_api);
         cd_len = sizeof(avb_1722_1_aem_get_counters_t);
         break;
     case AECP_AEM_CMD_LOCK_ENTITY:
+        // TODO: fix when we support LOCK_ENTITY
         break;
     default:
         break;
@@ -1251,11 +1280,6 @@ void send_unsolicited_notifications_state_changed(uint16_t command_type,
     if (status != AECP_AEM_STATUS_SUCCESS)
         return;
 
-    size_t num_tx_bytes = cd_len + 2 + // U Flag + command type
-                       AVB_1722_1_AECP_PAYLOAD_OFFSET + sizeof(ethernet_hdr_t);
-
-    if (num_tx_bytes < 64)
-        num_tx_bytes = 64;
-
+    size_t num_tx_bytes = calculate_num_tx_bytes(cd_len);
     send_unsolicited_notifications(i_eth, num_tx_bytes);
 }

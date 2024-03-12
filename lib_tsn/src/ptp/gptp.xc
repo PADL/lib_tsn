@@ -1397,3 +1397,9 @@ void ptp_periodic(client interface ethernet_tx_if i_eth, unsigned t) {
 void ptp_current_grandmaster(char grandmaster[8]) {
     memcpy(grandmaster, best_announce_msg.grandmasterIdentity.data, 8);
 }
+
+void ptp_get_path_sequence(uint16_t *count, n64_t pathSequence[PTP_MAXIMUM_PATH_TRACE_TLV]) {
+    memcpy(&pathSequence[0], &best_announce_msg.pathSequence[0], steps_removed_from_gm * 8);    
+    memcpy(&pathSequence[steps_removed_from_gm], &my_port_id, 8);
+    *count = steps_removed_from_gm + 1;
+}
