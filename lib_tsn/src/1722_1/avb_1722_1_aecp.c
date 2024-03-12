@@ -1239,6 +1239,8 @@ void send_unsolicited_notifications_state_changed(uint16_t command_type,
     case AECP_AEM_CMD_GET_AS_PATH:
         break;
     case AECP_AEM_CMD_GET_COUNTERS:
+        process_aem_cmd_get_counters(&pkt, &status, i_avb_api);
+        cd_len = sizeof(avb_1722_1_aem_get_counters_t);
         break;
     case AECP_AEM_CMD_LOCK_ENTITY:
         break;
