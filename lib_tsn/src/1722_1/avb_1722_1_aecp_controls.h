@@ -55,3 +55,9 @@ unsafe void process_aem_cmd_startstop_streaming(avb_1722_1_aecp_packet_t *unsafe
 unsafe void process_aem_cmd_get_counters(avb_1722_1_aecp_packet_t *unsafe pkt,
                                          REFERENCE_PARAM(uint8_t, status),
                                          CLIENT_INTERFACE(avb_interface, i_avb));
+
+unsafe void process_aem_cmd_get_avb_info(avb_1722_1_aecp_packet_t *unsafe pkt,
+                                         REFERENCE_PARAM(uint8_t, status),
+                                         CLIENT_INTERFACE(avb_interface, i_avb),
+                                         chanend c_ptp);
+ 

@@ -754,24 +754,8 @@ static void process_avb_1722_1_aecp_aem_msg(avb_1722_1_aecp_packet_t *pkt,
             break;
         }
         case AECP_AEM_CMD_GET_AVB_INFO: {
-            // Command and response share descriptor_type and descriptor_index
-            avb_1722_1_aem_get_avb_info_response_t *cmd =
-                (avb_1722_1_aem_get_avb_info_response_t *)(pkt->data.aem.command.payload);
-            uint16_t desc_id = ntoh_16(cmd->descriptor_id);
-
-            if (desc_id == 0) {
-                unsigned int pdelay;
-                get_avb_ptp_gm(c_ptp, &cmd->as_grandmaster_id[0]);
-                get_avb_ptp_port_pdelay(c_ptp, 0, &pdelay);
-                hton_32(cmd->propagation_delay, pdelay);
-                hton_16(cmd->msrp_mappings_count, 1);
-                cmd->msrp_mappings[0] = AVB_SRP_SRCLASS_DEFAULT;
-                cmd->msrp_mappings[1] = AVB_SRP_TSPEC_PRIORITY_DEFAULT;
-                cmd->msrp_mappings[2] = (AVB_DEFAULT_VLAN >> 8) & 0xff;
-                cmd->msrp_mappings[3] = (AVB_DEFAULT_VLAN & 0xff);
-
-                cd_len = sizeof(avb_1722_1_aem_get_avb_info_response_t);
-            }
+            process_aem_cmd_get_avb_info(pkt, &status, i_avb_api, c_ptp);
+            cd_len = sizeof(avb_1722_1_aem_get_avb_info_response_t);
             break;
         }
         case AECP_AEM_CMD_GET_STREAM_INFO:
@@ -1221,4 +1205,55 @@ static void send_unsolicited_notifications(CLIENT_INTERFACE(ethernet_tx_if, i_et
                      i, unsolicited_notification_controllers[i].l << 32,
                      unsolicited_notification_controllers[i].l, AEM_MSG_GET_COMMAND_TYPE(aem_msg));
     }
+}
+
+void send_unsolicited_notifications_state_changed(uint16_t command_type,
+                                                  uint16_t stream_desc_type,
+                                                  uint16_t stream_desc_id,
+                                                  CLIENT_INTERFACE(ethernet_tx_if, i_eth),
+                                                  CLIENT_INTERFACE(avb_interface, i_avb_api),
+                                                  CLIENT_INTERFACE(avb_1722_1_control_callbacks, i_1722_1_entity),
+                                                  chanend c_ptp) {
+    avb_1722_1_aecp_packet_t pkt;
+    size_t cd_len;
+    uint8_t status = AECP_AEM_STATUS_NOT_IMPLEMENTED;
+
+    memset(&pkt, 0, sizeof(pkt));
+    memcpy(pkt.target_guid, &my_guid, sizeof(my_guid));
+    memset(pkt.controller_guid, 0xff, sizeof(pkt.controller_guid));
+
+    switch (command_type) {
+    case AECP_AEM_CMD_GET_STREAM_INFO: {
+        avb_1722_1_aem_getset_stream_info_t *cmd =
+            (avb_1722_1_aem_getset_stream_info_t *)(pkt.data.aem.command.payload);
+        hton_16(cmd->descriptor_id, stream_desc_id);
+        hton_16(cmd->descriptor_type, stream_desc_type);
+        process_aem_cmd_getset_stream_info(&pkt, &status, AECP_AEM_CMD_GET_STREAM_INFO, i_avb_api);
+        cd_len = sizeof(avb_1722_1_aem_getset_stream_info_t);
+        break;
+    }
+    case AECP_AEM_CMD_GET_AVB_INFO:
+        process_aem_cmd_get_avb_info(&pkt, &status, i_avb_api, c_ptp);
+        cd_len = sizeof(avb_1722_1_aem_get_avb_info_response_t);
+        break;
+    case AECP_AEM_CMD_GET_AS_PATH:
+        break;
+    case AECP_AEM_CMD_GET_COUNTERS:
+        break;
+    case AECP_AEM_CMD_LOCK_ENTITY:
+        break;
+    default:
+        break;
+    }
+
+    if (status != AECP_AEM_STATUS_SUCCESS)
+        return;
+
+    size_t num_tx_bytes = cd_len + 2 + // U Flag + command type
+                       AVB_1722_1_AECP_PAYLOAD_OFFSET + sizeof(ethernet_hdr_t);
+
+    if (num_tx_bytes < 64)
+        num_tx_bytes = 64;
+
+    send_unsolicited_notifications(i_eth, num_tx_bytes);
 }

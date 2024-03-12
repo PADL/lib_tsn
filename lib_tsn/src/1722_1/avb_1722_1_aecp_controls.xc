@@ -12,6 +12,7 @@
 #include "debug_print.h"
 #include "xccompat.h"
 #include "avb_1722_1.h"
+#include "avb_internal.h"
 #include "aem_descriptor_types.h"
 #include "aem_descriptor_structs.h"
 
@@ -286,10 +287,10 @@ unsafe void process_aem_cmd_getset_stream_format(avb_1722_1_aecp_packet_t *unsaf
                                                  REFERENCE_PARAM(uint8_t, status),
                                                  uint16_t command_type,
                                                  CLIENT_INTERFACE(avb_interface, i_avb)) {
-    avb_1722_1_aem_get_stream_info_ex_t *cmd =
-        (avb_1722_1_aem_get_stream_info_ex_t *)(pkt->data.aem.command.payload);
-    uint16_t stream_index = ntoh_16(cmd->info.descriptor_id);
-    uint16_t desc_type = ntoh_16(cmd->info.descriptor_type);
+    avb_1722_1_aem_getset_stream_info_t *cmd =
+        (avb_1722_1_aem_getset_stream_info_t *)(pkt->data.aem.command.payload);
+    uint16_t stream_index = ntoh_16(cmd->descriptor_id);
+    uint16_t desc_type = ntoh_16(cmd->descriptor_type);
     enum avb_stream_format_t format;
     int rate;
     int channels;
@@ -309,13 +310,10 @@ unsafe void process_aem_cmd_getset_stream_format(avb_1722_1_aecp_packet_t *unsaf
     }
 
     if (command_type == AECP_AEM_CMD_GET_STREAM_FORMAT) {
-        get_stream_format_field(stream, cmd->info.stream_format);
-        memset(cmd->flags_ex, 0, 4);
-        cmd->pbsta_acmpsta = 0;
-        memset(cmd->reserved3, 0, 3);
+        get_stream_format_field(stream, cmd->stream_format);
     } else // AECP_AEM_CMD_SET_STREAM_FORMAT
     {
-        if (!unpack_stream_format(cmd->info.stream_format, format, rate, channels)) {
+        if (!unpack_stream_format(cmd->stream_format, format, rate, channels)) {
             status = AECP_AEM_STATUS_BAD_ARGUMENTS;
             return;
         }
@@ -341,10 +339,10 @@ unsafe void process_aem_cmd_getset_stream_info(avb_1722_1_aecp_packet_t *unsafe 
                                                REFERENCE_PARAM(uint8_t, status),
                                                uint16_t command_type,
                                                CLIENT_INTERFACE(avb_interface, i_avb)) {
-    avb_1722_1_aem_getset_stream_info_t *cmd =
-        (avb_1722_1_aem_getset_stream_info_t *)(pkt->data.aem.command.payload);
-    uint16_t stream_index = ntoh_16(cmd->descriptor_id);
-    uint16_t desc_type = ntoh_16(cmd->descriptor_type);
+    avb_1722_1_aem_get_stream_info_ex_t *cmd =
+        (avb_1722_1_aem_get_stream_info_ex_t *)(pkt->data.aem.command.payload);
+    uint16_t stream_index = ntoh_16(cmd->info.descriptor_id);
+    uint16_t desc_type = ntoh_16(cmd->info.descriptor_type);
 
     avb_srp_info_t *unsafe reservation;
     avb_stream_info_t *unsafe stream;
@@ -365,33 +363,36 @@ unsafe void process_aem_cmd_getset_stream_info(avb_1722_1_aecp_packet_t *unsafe 
     }
 
     if (command_type == AECP_AEM_CMD_GET_STREAM_INFO) {
-        get_stream_format_field(stream, cmd->stream_format);
+        get_stream_format_field(stream, cmd->info.stream_format);
 
-        hton_32(&cmd->stream_id[0], reservation->stream_id[0]);
-        hton_32(&cmd->stream_id[4], reservation->stream_id[1]);
-        hton_32(cmd->msrp_accumulated_latency, reservation->accumulated_latency);
-        memcpy(&cmd->msrp_failure_bridge_id, &reservation->failure_bridge_id, 8);
-        cmd->msrp_failure_code = reservation->failure_code;
+        hton_32(&cmd->info.stream_id[0], reservation->stream_id[0]);
+        hton_32(&cmd->info.stream_id[4], reservation->stream_id[1]);
+        hton_32(cmd->info.msrp_accumulated_latency, reservation->accumulated_latency);
+        memcpy(&cmd->info.msrp_failure_bridge_id, &reservation->failure_bridge_id, 8);
+        cmd->info.msrp_failure_code = reservation->failure_code;
 
-        memcpy(cmd->stream_dest_mac, reservation->dest_mac_addr, MACADDR_NUM_BYTES);
-        hton_16(cmd->stream_vlan_id, reservation->vlan_id);
+        memcpy(cmd->info.stream_dest_mac, reservation->dest_mac_addr, MACADDR_NUM_BYTES);
+        hton_16(cmd->info.stream_vlan_id, reservation->vlan_id);
 
         uint32_t flags =
             AECP_STREAM_INFO_FLAGS_STREAM_VLAN_ID_VALID |
             AECP_STREAM_INFO_FLAGS_STREAM_DESC_MAC_VALID | AECP_STREAM_INFO_FLAGS_STREAM_ID_VALID |
             AECP_STREAM_INFO_FLAGS_STREAM_FORMAT_VALID | AECP_STREAM_INFO_FLAGS_MSRP_ACC_LAT_VALID |
             (reservation->failure_bridge_id[1] ? AECP_STREAM_INFO_FLAGS_MSRP_FAILURE_VALID : 0);
-        hton_32(&cmd->flags[0], flags);
+        hton_32(&cmd->info.flags[0], flags);
+        hton_32(&cmd->flags_ex[0], 0);
+        cmd->pbsta_acmpsta = 0;
+        memset(cmd->reserved3, 0, 3);
     } else {
         if (stream->state != AVB_SOURCE_STATE_DISABLED) {
             status = AECP_AEM_STATUS_STREAM_IS_RUNNING;
             return;
         }
 
-        int flags = ntoh_32(cmd->flags);
+        int flags = ntoh_32(cmd->info.flags);
 
         if (flags & AECP_STREAM_INFO_FLAGS_STREAM_VLAN_ID_VALID) {
-            reservation->vlan_id = ntoh_16(cmd->stream_vlan_id);
+            reservation->vlan_id = ntoh_16(cmd->info.stream_vlan_id);
         }
 
         if (desc_type == AEM_STREAM_INPUT_TYPE) {
@@ -527,4 +528,26 @@ unsafe void process_aem_cmd_get_counters(avb_1722_1_aecp_packet_t *unsafe pkt,
             status = AECP_AEM_STATUS_NO_SUCH_DESCRIPTOR;
     } else
         status = AECP_AEM_STATUS_NOT_SUPPORTED;
+}
+
+unsafe void process_aem_cmd_get_avb_info(avb_1722_1_aecp_packet_t *unsafe pkt,
+                                         uint8_t &status,
+                                         client interface avb_interface avb,
+                                         chanend c_ptp) {
+    // Command and response share descriptor_type and descriptor_index
+    avb_1722_1_aem_get_avb_info_response_t *cmd =
+        (avb_1722_1_aem_get_avb_info_response_t *)(pkt->data.aem.command.payload);
+    uint16_t desc_id = ntoh_16(cmd->descriptor_id);
+
+    if (desc_id == 0) {
+        unsigned int pdelay;
+        get_avb_ptp_gm(c_ptp, &cmd->as_grandmaster_id[0]);
+        get_avb_ptp_port_pdelay(c_ptp, 0, &pdelay);
+        hton_32(cmd->propagation_delay, pdelay);
+        hton_16(cmd->msrp_mappings_count, 1);
+        cmd->msrp_mappings[0] = AVB_SRP_SRCLASS_DEFAULT;
+        cmd->msrp_mappings[1] = AVB_SRP_TSPEC_PRIORITY_DEFAULT;
+        cmd->msrp_mappings[2] = (AVB_DEFAULT_VLAN >> 8) & 0xff;
+        cmd->msrp_mappings[3] = (AVB_DEFAULT_VLAN & 0xff);
+    }
 }
