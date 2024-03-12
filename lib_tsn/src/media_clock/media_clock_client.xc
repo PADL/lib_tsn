@@ -4,38 +4,32 @@
 #include "media_clock_client.h"
 #include "media_clock_internal.h"
 
-void notify_buf_ctl_of_info(chanend buf_ctl, int fifo)
-{
-  outuchar(buf_ctl, BUF_CTL_GOT_INFO);
+void notify_buf_ctl_of_info(chanend buf_ctl, int fifo) {
+    outuchar(buf_ctl, BUF_CTL_GOT_INFO);
 #if defined(__XS2A__)
-  outuint(buf_ctl, fifo);
+    outuint(buf_ctl, fifo);
 #else
-  outuchar(buf_ctl,fifo>>8);
-  outuchar(buf_ctl,fifo&0xff);
+    outuchar(buf_ctl, fifo >> 8);
+    outuchar(buf_ctl, fifo & 0xff);
 #endif
-  outct(buf_ctl, XS1_CT_END);
+    outct(buf_ctl, XS1_CT_END);
 }
 
-void notify_buf_ctl_of_new_stream(chanend buf_ctl,
-                                  int fifo)
-{
-  outuchar(buf_ctl, BUF_CTL_NEW_STREAM);
+void notify_buf_ctl_of_new_stream(chanend buf_ctl, int fifo) {
+    outuchar(buf_ctl, BUF_CTL_NEW_STREAM);
 #if defined(__XS2A__)
-  outuint(buf_ctl, fifo);
+    outuint(buf_ctl, fifo);
 #else
-  outuchar(buf_ctl,fifo>>8);
-  outuchar(buf_ctl,fifo&0xff);
+    outuchar(buf_ctl, fifo >> 8);
+    outuchar(buf_ctl, fifo & 0xff);
 #endif
-  outct(buf_ctl, XS1_CT_END);
+    outct(buf_ctl, XS1_CT_END);
 }
 
-void buf_ctl_ack(chanend buf_ctl)
-{
-  outct(buf_ctl, XS1_CT_END);
-}
+void buf_ctl_ack(chanend buf_ctl) { outct(buf_ctl, XS1_CT_END); }
 
 int get_buf_ctl_adjust(chanend buf_ctl) {
-  int adjust;
+    int adjust;
   buf_ctl :> adjust;
   return adjust;
 }
@@ -68,11 +62,8 @@ void send_buf_ctl_info(chanend buf_ctl,
   }
 }
 
-void send_buf_ctl_new_stream_info(chanend buf_ctl,
-                                  int media_clock)
-{
+void send_buf_ctl_new_stream_info(chanend buf_ctl, int media_clock) {
   slave {
     buf_ctl <: media_clock;
   }
 }
-

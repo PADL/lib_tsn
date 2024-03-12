@@ -7,41 +7,35 @@
 #define PTP_ADJUST_PREC 30
 
 enum ptp_cmd_t {
-  PTP_GET_TIME_INFO,
-  PTP_GET_TIME_INFO_MOD64,
-  PTP_GET_GRANDMASTER,
-  PTP_GET_STATE,
-  PTP_GET_PDELAY
+    PTP_GET_TIME_INFO,
+    PTP_GET_TIME_INFO_MOD64,
+    PTP_GET_GRANDMASTER,
+    PTP_GET_STATE,
+    PTP_GET_PDELAY
 };
 
-typedef enum ptp_port_role_t {
-  PTP_MASTER,
-  PTP_UNCERTAIN,
-  PTP_SLAVE,
-  PTP_DISABLED
-} ptp_port_role_t;
+typedef enum ptp_port_role_t { PTP_MASTER, PTP_UNCERTAIN, PTP_SLAVE, PTP_DISABLED } ptp_port_role_t;
 
 typedef struct ptp_path_delay_t {
-  int valid;
-  unsigned int pdelay;
-  unsigned int lost_responses;
-  unsigned int exchanges;
-  unsigned int multiple_resp_count;
-  unsigned int last_multiple_resp_seq_id;
-  n80_t rcvd_source_identity;
+    int valid;
+    unsigned int pdelay;
+    unsigned int lost_responses;
+    unsigned int exchanges;
+    unsigned int multiple_resp_count;
+    unsigned int last_multiple_resp_seq_id;
+    n80_t rcvd_source_identity;
 } ptp_path_delay_t;
 
 typedef struct ptp_port_info_t {
-  int asCapable;
-  ptp_port_role_t role_state;
-  ptp_path_delay_t delay_info;
+    int asCapable;
+    ptp_port_role_t role_state;
+    ptp_path_delay_t delay_info;
 } ptp_port_info_t;
 
 // Synchronous PTP client functions
 // --------------------------------
 
 ptp_port_role_t ptp_get_state(chanend ptp_server);
-
 
 /** Retrieve time information from the PTP server
  *
@@ -54,9 +48,7 @@ ptp_port_role_t ptp_get_state(chanend ptp_server);
  **/
 void ptp_get_propagation_delay(chanend ptp_server, unsigned *pdelay);
 
-
-void ptp_get_current_grandmaster(chanend ptp_server, unsigned char grandmaster[8]);
-
+void ptp_get_current_grandmaster(chanend ptp_server, uint8_t grandmaster[8]);
 
 /** Initialize the inline ptp server.
  *
@@ -89,36 +81,30 @@ void ptp_server_init(CLIENT_INTERFACE(ethernet_cfg_if, i_eth_cfg),
                      timer ptp_timer,
                      REFERENCE_PARAM(int, ptp_timeout));
 
-
 #ifdef __XC__
-void ptp_recv_and_process_packet(client interface ethernet_rx_if i_eth_rx, client interface ethernet_tx_if i_eth_tx);
+void ptp_recv_and_process_packet(client interface ethernet_rx_if i_eth_rx,
+                                 client interface ethernet_tx_if i_eth_tx);
 #endif
 #ifdef __XC__
 #pragma select handler
 #endif
 void ptp_process_client_request(chanend c, timer ptp_timer);
 void ptp_periodic(CLIENT_INTERFACE(ethernet_tx_if, i_eth), unsigned);
-#define PTP_PERIODIC_TIME (10000)  // 0.tfp1 milliseconds
+#define PTP_PERIODIC_TIME (10000) // 0.tfp1 milliseconds
 
+#define do_ptp_server(i_eth_rx, i_eth_tx, client, num_clients, ptp_timer, ptp_timeout)             \
+    case i_eth_rx.packet_ready():                                                                  \
+        ptp_recv_and_process_packet(i_eth_rx, i_eth_tx);                                           \
+        break;                                                                                     \
+    case (int i = 0; i < num_clients; i++) ptp_process_client_request(client[i], ptp_timer):       \
+        break;                                                                                     \
+  case ptp_timer when timerafter(ptp_timeout) :> void:                                             \
+        ptp_periodic(i_eth_tx, ptp_timeout);                                                       \
+        ptp_timeout += PTP_PERIODIC_TIME;                                                          \
+        break
 
+void ptp_get_local_time_info_mod64(REFERENCE_PARAM(ptp_time_info_mod64, info));
 
-
-
-#define do_ptp_server(i_eth_rx, i_eth_tx, client, num_clients, ptp_timer, ptp_timeout)      \
-  case i_eth_rx.packet_ready(): \
-       ptp_recv_and_process_packet(i_eth_rx, i_eth_tx); \
-       break;                     \
- case (int i=0;i<num_clients;i++) ptp_process_client_request(client[i], ptp_timer): \
-       break; \
-  case ptp_timer when timerafter(ptp_timeout) :> void: \
-       ptp_periodic(i_eth_tx, ptp_timeout); \
-       ptp_timeout += PTP_PERIODIC_TIME; \
-       break
-
-void ptp_get_local_time_info_mod64(REFERENCE_PARAM(ptp_time_info_mod64,info));
-
-void ptp_output_test_clock(chanend ptp_link,
-                           port test_clock_port,
-                           int period);
+void ptp_output_test_clock(chanend ptp_link, port test_clock_port, int period);
 
 #endif // __ptp_internal_h__

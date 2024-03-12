@@ -2,15 +2,13 @@
 #include <xs1.h>
 #include "gptp.h"
 
-void ptp_output_test_clock(chanend ptp_link,
-                           port test_clock_port,
-                           int period)
-{ int x = 0;
-  timer tmr;
-  int t;
-  ptp_timestamp ptp_ts;
-  ptp_time_info ptp_info;
-  int t0;
+void ptp_output_test_clock(chanend ptp_link, port test_clock_port, int period) {
+    int x = 0;
+    timer tmr;
+    int t;
+    ptp_timestamp ptp_ts;
+    ptp_time_info ptp_info;
+    int t0;
 #if 0
  tmr :> t;
   while(1) {
@@ -21,13 +19,13 @@ void ptp_output_test_clock(chanend ptp_link,
   }
 #else
 
-  ptp_get_time_info(ptp_link, ptp_info);
+    ptp_get_time_info(ptp_link, ptp_info);
 
-  while(1) {
-    int discontinuity = 0;
-    //    tmr :> t;
-    //    t += 200000000;
-    //    tmr when timerafter(t) :> void;
+    while (1) {
+        int discontinuity = 0;
+        //    tmr :> t;
+        //    t += 200000000;
+        //    tmr when timerafter(t) :> void;
 
     tmr :> t;
     local_timestamp_to_ptp(ptp_ts, t, ptp_info);
@@ -52,8 +50,7 @@ void ptp_output_test_clock(chanend ptp_link,
       if (t0 > 2000)
         discontinuity = 1;
     }
-  }
+    }
 
 #endif
-
 }

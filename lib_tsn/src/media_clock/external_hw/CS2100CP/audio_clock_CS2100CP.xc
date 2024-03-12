@@ -7,13 +7,13 @@
 #include <stdlib.h>
 #include "debug_print.h"
 
-static unsigned char regaddr[9] = {0x09,0x08,0x07,0x06,0x17,0x16,0x05,0x03,0x1E};
-static unsigned char regdata[9] = {0x00,0x00,0x00,0x00,0x00,0x08,0x01,0x05,0x00};
+static uint8_t regaddr[9] = {0x09,0x08,0x07,0x06,0x17,0x16,0x05,0x03,0x1E};
+static uint8_t regdata[9] = {0x00,0x00,0x00,0x00,0x00,0x08,0x01,0x05,0x00};
 
 void audio_clock_CS2100CP_init_ex(client interface i2c_master_if i2c, unsigned int mclks_per_wordclk)
 {
   int deviceAddr = 0x4E;
-  unsigned char data[1];
+  uint8_t data[1];
   unsigned int mult[1];
 
   // this is the multiplier in the PLL, which takes the PLL reference clock and
@@ -25,7 +25,7 @@ void audio_clock_CS2100CP_init_ex(client interface i2c_master_if i2c, unsigned i
   regdata[3] = (mult,char[])[3];
 
   for(int i = 8; i >= 0; i--) {
-    data[0] = (regdata,unsigned char[])[i];
+    data[0] = (regdata,uint8_t[])[i];
     i2c_regop_res_t res;
     res = i2c.write_reg(deviceAddr, regaddr[i], data[0]);
     if (res != I2C_REGOP_SUCCESS) {

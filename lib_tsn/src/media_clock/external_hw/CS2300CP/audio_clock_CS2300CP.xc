@@ -6,14 +6,14 @@
 #include "media_clock_internal.h"
 #include <stdlib.h>
 
-static unsigned char regaddr[9] = {0x09,0x08,0x07,0x06,0x17,0x16,0x05,0x03,0x1E};
-static unsigned char regdata[9] = {0x00,0x00,0x00,0x00,0x00,0x10,0x01,0x01,0x00};
+static uint8_t regaddr[9] = {0x09,0x08,0x07,0x06,0x17,0x16,0x05,0x03,0x1E};
+static uint8_t regdata[9] = {0x00,0x00,0x00,0x00,0x00,0x10,0x01,0x01,0x00};
 
 // Set up the multiplier in the PLL clock generator
 void audio_clock_CS2300CP_init(client interface i2c_master_if i2c)
 {
   int deviceAddr = 0x4E;
-  unsigned char data[1];
+  uint8_t data[1];
   int mult[1];
   const unsigned int mclks_per_wordclk = 512;
 
@@ -29,7 +29,7 @@ void audio_clock_CS2300CP_init(client interface i2c_master_if i2c)
   regdata[3] = (mult,char[])[3];
 
   for(int i = 8; i >= 0; i--) {
-    data[0] = (regdata,unsigned char[])[i];
+    data[0] = (regdata,uint8_t[])[i];
     i2c.write_reg(deviceAddr, regaddr[i], data[0]);
   }
 }

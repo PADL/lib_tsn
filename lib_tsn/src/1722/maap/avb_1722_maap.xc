@@ -19,7 +19,7 @@ typedef enum {
 } maap_state_t;
 
 typedef struct {
-  unsigned char base[6];
+  uint8_t base[6];
   int  range;
   int  probe_count;
   int  timeout;
@@ -27,8 +27,8 @@ typedef struct {
   maap_state_t state;
 } maap_address_range;
 
-static unsigned char my_mac_addr[6];
-unsigned char maap_dest_addr[6] = MAAP_PROTOCOL_DEST_ADDR;
+static uint8_t my_mac_addr[6];
+uint8_t maap_dest_addr[6] = MAAP_PROTOCOL_DEST_ADDR;
 
 static random_generator_t random_gen;
 
@@ -40,12 +40,12 @@ static int timeout_val;
 static unsigned int maap_buf[(MAX_AVB_1722_MAAP_PDU_SIZE+1)/4];
 
 static int create_maap_packet(int message_type,
-                              unsigned char (&?src_addr)[6],
+                              uint8_t (&?src_addr)[6],
                               maap_address_range &addr,
                               char *buf,
-                              unsigned char (&?request_addr)[6],
+                              uint8_t (&?request_addr)[6],
                               int request_count,
-                              unsigned char (&?conflict_addr)[6],
+                              uint8_t (&?conflict_addr)[6],
                               int conflict_count)
 {
   struct ethernet_hdr_t *hdr = (ethernet_hdr_t*) &buf[0];
@@ -99,10 +99,10 @@ static int create_maap_packet(int message_type,
   return (64);
 }
 
-void avb_1722_maap_init(unsigned char macaddr[6])
+void avb_1722_maap_init(uint8_t macaddr[6])
 {
   maap_addr.state = MAAP_DISABLED;
-  unsigned char base_addr[6] = MAAP_ALLOCATION_POOL_BASE_ADDR;
+  uint8_t base_addr[6] = MAAP_ALLOCATION_POOL_BASE_ADDR;
   memcpy(maap_addr.base, base_addr, sizeof(base_addr));
 
   memcpy(my_mac_addr, macaddr, 6);
@@ -161,7 +161,7 @@ void avb_1722_maap_relinquish_addresses()
 	maap_addr.state = MAAP_DISABLED;
 }
 
-int avb_1722_maap_get_base_address(unsigned char addr[6])
+int avb_1722_maap_get_base_address(uint8_t addr[6])
 {
   if (maap_addr.state == MAAP_DISABLED) return -1;
   for (int i=0; i < 6; i++)
@@ -182,7 +182,7 @@ void avb_1722_maap_periodic(client interface ethernet_tx_if i_eth, client interf
   case MAAP_PROBING:
     if (maap_addr.immediately || avb_timer_expired(maap_timer))
     {
-      unsigned char mac_addr[6];
+      uint8_t mac_addr[6];
       maap_addr.immediately = 0;
 
       nbytes = create_maap_packet(MAAP_PROBE,
@@ -260,16 +260,16 @@ void avb_1722_maap_periodic(client interface ethernet_tx_if i_eth, client interf
   }
 }
 
-static unsigned long long mac_addr_to_num_reverse(unsigned char addr[6])
+static uint64_t mac_addr_to_num_reverse(uint8_t addr[6])
 {
-  unsigned long long x = 0;
+  uint64_t x = 0;
   for (int i=0;i<6;i++) {
-    x += (((unsigned long long) addr[i]) << (i*8));
+    x += (((uint64_t) addr[i]) << (i*8));
   }
   return x;
 }
 
-static int maap_compare_mac(unsigned char src_addr[6])
+static int maap_compare_mac(uint8_t src_addr[6])
 {
   if (mac_addr_to_num_reverse(my_mac_addr) < mac_addr_to_num_reverse(src_addr))
   {
@@ -278,7 +278,7 @@ static int maap_compare_mac(unsigned char src_addr[6])
   return 0;
 }
 
-static int maap_conflict(unsigned char remote_addr[6], int remote_count, unsigned char (&?conflicted_addr)[6], int &?conflicted_count)
+static int maap_conflict(uint8_t remote_addr[6], int remote_count, uint8_t (&?conflicted_addr)[6], int &?conflicted_count)
 {
   int my_addr_lo;
   int my_addr_hi;
@@ -364,20 +364,20 @@ static int maap_conflict(unsigned char remote_addr[6], int remote_count, unsigne
       conflicted_addr[i] = maap_addr.base[i];
     }
 
-    conflicted_addr[4] = (unsigned char)(first_conflict_addr >> 8);
-    conflicted_addr[5] = (unsigned char)first_conflict_addr;
+    conflicted_addr[4] = (uint8_t)(first_conflict_addr >> 8);
+    conflicted_addr[5] = (uint8_t)first_conflict_addr;
   }
 
   return 1;
 }
 
-void avb_1722_maap_process_packet(unsigned char buf[nbytes], unsigned int nbytes, unsigned char src_addr[6], client interface ethernet_tx_if i_eth)
+void avb_1722_maap_process_packet(uint8_t buf[nbytes], unsigned int nbytes, uint8_t src_addr[6], client interface ethernet_tx_if i_eth)
 {
   struct maap_packet_t *maap_pkt = (struct maap_packet_t *) &buf[0];
   int msg_type;
-  unsigned char conflict_addr[6];
+  uint8_t conflict_addr[6];
   int conflict_count;
-  unsigned char *test_addr;
+  uint8_t *test_addr;
   int test_count;
 
   if (GET_MAAP_SUBTYPE(maap_pkt) != 0x7e)

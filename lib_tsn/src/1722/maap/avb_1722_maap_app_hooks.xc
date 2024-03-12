@@ -10,7 +10,7 @@
 #include "avb_1722_1_adp.h"
 #include "avb_1722_1_acmp.h"
 
-void avb_talker_on_source_address_reserved_default(client interface avb_interface avb, int source_num, unsigned char mac_addr[6])
+void avb_talker_on_source_address_reserved_default(client interface avb_interface avb, int source_num, uint8_t mac_addr[6])
 {
   // Do some debug print
   debug_printf("MAAP reserved Talker stream #%d address: %x:%x:%x:%x:%x:%x\n", source_num,

@@ -20,9 +20,9 @@
 
 #define PERIODIC_POLL_TIME 5000
 
-unsigned char my_mac_addr[6];
-extern unsigned char maap_dest_addr[6];
-extern unsigned char avb_1722_1_adp_dest_addr[6];
+uint8_t my_mac_addr[6];
+extern uint8_t maap_dest_addr[6];
+extern uint8_t avb_1722_1_adp_dest_addr[6];
 
 // Buffer for constructing 1722.1 transmit packets
 unsigned int avb_1722_1_buf[AVB_1722_1_PACKET_SIZE_WORDS];
@@ -30,12 +30,11 @@ unsigned int avb_1722_1_buf[AVB_1722_1_PACKET_SIZE_WORDS];
 // The GUID of this device
 guid_t my_guid;
 
-void avb_1722_1_init(unsigned char macaddr[MACADDR_NUM_BYTES], unsigned serial_num)
-{
+void avb_1722_1_init(uint8_t macaddr[MACADDR_NUM_BYTES], unsigned serial_num) {
     memcpy(my_mac_addr, macaddr, MACADDR_NUM_BYTES);
 
     my_guid.c[0] = macaddr[5];
-    my_guid.c[1] =  macaddr[4];
+    my_guid.c[1] = macaddr[4];
     my_guid.c[2] = macaddr[3];
     my_guid.c[3] = 0xfe;
     my_guid.c[4] = 0xff;
@@ -57,35 +56,32 @@ void avb_1722_1_init(unsigned char macaddr[MACADDR_NUM_BYTES], unsigned serial_n
 #if (AVB_1722_1_LISTENER_ENABLED)
     avb_1722_1_acmp_listener_init();
 #endif
-
 }
 
-void avb_1722_1_process_packet(unsigned char buf[len], unsigned len,
-                                unsigned char src_addr[6],
-                                client interface ethernet_tx_if i_eth,
-                                CLIENT_INTERFACE(avb_interface, i_avb_api),
-                                CLIENT_INTERFACE(avb_1722_1_control_callbacks, i_1722_1_entity),
-                                chanend c_ptp)
-{
-    avb_1722_1_packet_header_t *pkt = (avb_1722_1_packet_header_t *) &buf[0];
+void avb_1722_1_process_packet(uint8_t buf[len],
+                               unsigned len,
+                               uint8_t src_addr[6],
+                               client interface ethernet_tx_if i_eth,
+                               CLIENT_INTERFACE(avb_interface, i_avb_api),
+                               CLIENT_INTERFACE(avb_1722_1_control_callbacks, i_1722_1_entity),
+                               chanend c_ptp) {
+    avb_1722_1_packet_header_t *pkt = (avb_1722_1_packet_header_t *)&buf[0];
     unsigned subtype = GET_1722_1_SUBTYPE(pkt);
     unsigned datalen = GET_1722_1_DATALENGTH(pkt);
 
-    switch (subtype)
-    {
+    switch (subtype) {
     case DEFAULT_1722_1_ADP_SUBTYPE:
-        if (datalen == AVB_1722_1_ADP_CD_LENGTH)
-        {
-          process_avb_1722_1_adp_packet(*(avb_1722_1_adp_packet_t*)pkt, i_eth);
+        if (datalen == AVB_1722_1_ADP_CD_LENGTH) {
+            process_avb_1722_1_adp_packet(*(avb_1722_1_adp_packet_t *)pkt, i_eth);
         }
         return;
     case DEFAULT_1722_1_AECP_SUBTYPE:
-        process_avb_1722_1_aecp_packet(src_addr, (avb_1722_1_aecp_packet_t*)pkt, len, i_eth, i_avb_api, i_1722_1_entity, c_ptp);
+        process_avb_1722_1_aecp_packet(src_addr, (avb_1722_1_aecp_packet_t *)pkt, len, i_eth,
+                                       i_avb_api, i_1722_1_entity, c_ptp);
         return;
     case DEFAULT_1722_1_ACMP_SUBTYPE:
-        if (datalen == AVB_1722_1_ACMP_CD_LENGTH)
-        {
-          process_avb_1722_1_acmp_packet((avb_1722_1_acmp_packet_t*)pkt, i_eth);
+        if (datalen == AVB_1722_1_ACMP_CD_LENGTH) {
+            process_avb_1722_1_acmp_packet((avb_1722_1_acmp_packet_t *)pkt, i_eth);
         }
         return;
     default:
@@ -93,8 +89,9 @@ void avb_1722_1_process_packet(unsigned char buf[len], unsigned len,
     }
 }
 
-void avb_1722_1_periodic(client interface ethernet_tx_if i_eth, chanend c_ptp, client interface avb_interface i_avb)
-{
+void avb_1722_1_periodic(client interface ethernet_tx_if i_eth,
+                         chanend c_ptp,
+                         client interface avb_interface i_avb) {
     avb_1722_1_adp_advertising_periodic(i_eth, c_ptp);
 #if (AVB_1722_1_CONTROLLER_ENABLED)
     avb_1722_1_adp_discovery_periodic(i_eth, i_avb);
@@ -110,8 +107,8 @@ void avb_1722_1_periodic(client interface ethernet_tx_if i_eth, chanend c_ptp, c
 }
 
 // avb_mrp.c:
-extern unsigned char srp_dest_mac[6];
-extern unsigned char mvrp_dest_mac[6];
+extern uint8_t srp_dest_mac[6];
+extern uint8_t mvrp_dest_mac[6];
 
 [[combinable]]
 void avb_1722_1_maap_srp_task(client interface avb_interface i_avb,
@@ -122,84 +119,84 @@ void avb_1722_1_maap_srp_task(client interface avb_interface i_avb,
                               client interface ethernet_cfg_if i_eth_cfg,
                               chanend c_ptp,
                               otp_ports_t &?otp_ports) {
-  unsigned periodic_timeout;
-  timer tmr;
-  unsigned int buf[(ETHERNET_MAX_PACKET_SIZE+3)>>2];
-  unsigned char mac_addr[6];
-  unsigned int serial = 0x12345678;
+    unsigned periodic_timeout;
+    timer tmr;
+    unsigned int buf[(ETHERNET_MAX_PACKET_SIZE + 3) >> 2];
+    uint8_t mac_addr[6];
+    unsigned int serial = 0x12345678;
 
-  if (!isnull(otp_ports)) {
-    otp_board_info_get_serial(otp_ports, serial);
-  }
+    if (!isnull(otp_ports)) {
+        otp_board_info_get_serial(otp_ports, serial);
+    }
 
 #if AVB_1722_1_FIRMWARE_UPGRADE_ENABLED
-  if (isnull(qspi_ports)) {
-    fail("Firmware upgrade enabled but QSPI ports null");
-  }
-  else if (fl_connect(qspi_ports)) {
-    fail("Could not connect to flash");
-  }
+    if (isnull(qspi_ports)) {
+        fail("Firmware upgrade enabled but QSPI ports null");
+    } else if (fl_connect(qspi_ports)) {
+        fail("Could not connect to flash");
+    }
 #endif
 
-  srp_store_ethernet_interface(i_eth_tx);
-  mrp_store_ethernet_interface(i_eth_tx);
+    srp_store_ethernet_interface(i_eth_tx);
+    mrp_store_ethernet_interface(i_eth_tx);
 
-  i_eth_cfg.get_macaddr(0, mac_addr);
+    i_eth_cfg.get_macaddr(0, mac_addr);
 
-  mrp_init(mac_addr);
-  srp_domain_init();
-  avb_mvrp_init();
+    mrp_init(mac_addr);
+    srp_domain_init();
+    avb_mvrp_init();
 
-  size_t eth_index = i_eth_rx.get_index();
-  ethernet_macaddr_filter_t avdecc_maap_filter;
-  avdecc_maap_filter.appdata = 0;
-  memcpy(avdecc_maap_filter.addr, mac_addr, 6);
-  i_eth_cfg.add_macaddr_filter(eth_index, 0, avdecc_maap_filter);
-  memcpy(avdecc_maap_filter.addr, maap_dest_addr, 6);
-  i_eth_cfg.add_macaddr_filter(eth_index, 0, avdecc_maap_filter);
-  memcpy(avdecc_maap_filter.addr, avb_1722_1_adp_dest_addr, 6);
-  i_eth_cfg.add_macaddr_filter(eth_index, 0, avdecc_maap_filter);
-  i_eth_cfg.add_ethertype_filter(eth_index, AVB_1722_ETHERTYPE);
+    size_t eth_index = i_eth_rx.get_index();
+    ethernet_macaddr_filter_t avdecc_maap_filter;
+    avdecc_maap_filter.appdata = 0;
+    memcpy(avdecc_maap_filter.addr, mac_addr, 6);
+    i_eth_cfg.add_macaddr_filter(eth_index, 0, avdecc_maap_filter);
+    memcpy(avdecc_maap_filter.addr, maap_dest_addr, 6);
+    i_eth_cfg.add_macaddr_filter(eth_index, 0, avdecc_maap_filter);
+    memcpy(avdecc_maap_filter.addr, avb_1722_1_adp_dest_addr, 6);
+    i_eth_cfg.add_macaddr_filter(eth_index, 0, avdecc_maap_filter);
+    i_eth_cfg.add_ethertype_filter(eth_index, AVB_1722_ETHERTYPE);
 
-  ethernet_macaddr_filter_t msrp_mvrp_filter;
-  msrp_mvrp_filter.appdata = 0;
-  memcpy(msrp_mvrp_filter.addr, srp_dest_mac, 6);
-  i_eth_cfg.add_macaddr_filter(eth_index, 0, msrp_mvrp_filter);
-  memcpy(msrp_mvrp_filter.addr, mvrp_dest_mac, 6);
-  i_eth_cfg.add_macaddr_filter(eth_index, 0, msrp_mvrp_filter);
-  i_eth_cfg.add_ethertype_filter(eth_index, AVB_SRP_ETHERTYPE);
-  i_eth_cfg.add_ethertype_filter(eth_index, AVB_MVRP_ETHERTYPE);
+    ethernet_macaddr_filter_t msrp_mvrp_filter;
+    msrp_mvrp_filter.appdata = 0;
+    memcpy(msrp_mvrp_filter.addr, srp_dest_mac, 6);
+    i_eth_cfg.add_macaddr_filter(eth_index, 0, msrp_mvrp_filter);
+    memcpy(msrp_mvrp_filter.addr, mvrp_dest_mac, 6);
+    i_eth_cfg.add_macaddr_filter(eth_index, 0, msrp_mvrp_filter);
+    i_eth_cfg.add_ethertype_filter(eth_index, AVB_SRP_ETHERTYPE);
+    i_eth_cfg.add_ethertype_filter(eth_index, AVB_MVRP_ETHERTYPE);
 
-  avb_1722_1_init(mac_addr, serial);
-  avb_1722_maap_init(mac_addr);
+    avb_1722_1_init(mac_addr, serial);
+    avb_1722_maap_init(mac_addr);
 #if NUM_ETHERNET_PORTS > 1
-  avb_1722_maap_request_addresses(AVB_NUM_SOURCES, null);
+    avb_1722_maap_request_addresses(AVB_NUM_SOURCES, null);
 #endif
 
   tmr :> periodic_timeout;
 
   while (1) {
-    select {
+      select {
       // Receive and process any incoming AVB packets (802.1Qat, 1722_MAAP)
-      case i_eth_rx.packet_ready():
-      {
-        ethernet_packet_info_t packet_info;
-        i_eth_rx.get_packet(packet_info, (char *)buf, ETHERNET_MAX_PACKET_SIZE);
-        avb_process_srp_control_packet(i_avb, buf, packet_info.len, packet_info.type, i_eth_tx, packet_info.src_ifnum);
-        avb_process_1722_control_packet(buf, packet_info.len, packet_info.type, i_eth_tx, i_avb, i_1722_1_entity, c_ptp);
-        break;
+      case i_eth_rx.packet_ready(): {
+          ethernet_packet_info_t packet_info;
+          i_eth_rx.get_packet(packet_info, (char *)buf, ETHERNET_MAX_PACKET_SIZE);
+          avb_process_srp_control_packet(i_avb, buf, packet_info.len, packet_info.type, i_eth_tx,
+                                         packet_info.src_ifnum);
+          avb_process_1722_control_packet(buf, packet_info.len, packet_info.type, i_eth_tx, i_avb,
+                                          i_1722_1_entity, c_ptp);
+          break;
       }
       // Periodic processing
       case tmr when timerafter(periodic_timeout) :> unsigned int time_now:
       {
-        avb_1722_1_periodic(i_eth_tx, c_ptp, i_avb);
-        avb_1722_maap_periodic(i_eth_tx, i_avb);
-        mrp_periodic(i_avb);
+          avb_1722_1_periodic(i_eth_tx, c_ptp, i_avb);
+          avb_1722_maap_periodic(i_eth_tx, i_avb);
+          mrp_periodic(i_avb);
 
-        periodic_timeout = time_now + PERIODIC_POLL_TIME;
-        break;
+          periodic_timeout = time_now + PERIODIC_POLL_TIME;
+          break;
       }
-    }
+      }
   }
 }
 
@@ -214,19 +211,18 @@ void avb_1722_1_maap_task(otp_ports_t &?otp_ports,
                               chanend c_ptp) {
   unsigned periodic_timeout;
   timer tmr;
-  unsigned int buf[(ETHERNET_MAX_PACKET_SIZE+3)>>2];
-  unsigned char mac_addr[6];
+  unsigned int buf[(ETHERNET_MAX_PACKET_SIZE + 3) >> 2];
+  uint8_t mac_addr[6];
   unsigned int serial = 0x12345678;
 
   if (!isnull(otp_ports)) {
-    otp_board_info_get_serial(otp_ports, serial);
+      otp_board_info_get_serial(otp_ports, serial);
   }
 #if AVB_1722_1_FIRMWARE_UPGRADE_ENABLED
   if (isnull(qspi_ports)) {
-    fail("Firmware upgrade enabled but QSPI ports null");
-  }
-  else if (fl_connect(qspi_ports)) {
-    fail("Could not connect to flash");
+      fail("Firmware upgrade enabled but QSPI ports null");
+  } else if (fl_connect(qspi_ports)) {
+      fail("Could not connect to flash");
   }
 #endif
 
@@ -251,25 +247,25 @@ void avb_1722_1_maap_task(otp_ports_t &?otp_ports,
   tmr :> periodic_timeout;
 
   while (1) {
-    select {
+      select {
       // Receive and process any incoming AVB packets (802.1Qat, 1722_MAAP)
-      case i_eth_rx.packet_ready():
-      {
-        ethernet_packet_info_t packet_info;
-        i_eth_rx.get_packet(packet_info, (char *)buf, AVB_1722_1_PACKET_SIZE_WORDS * 4);
+      case i_eth_rx.packet_ready(): {
+          ethernet_packet_info_t packet_info;
+          i_eth_rx.get_packet(packet_info, (char *)buf, AVB_1722_1_PACKET_SIZE_WORDS * 4);
 
-        avb_process_1722_control_packet(buf, packet_info.len, packet_info.type, i_eth_tx, i_avb, i_1722_1_entity, c_ptp);
-        break;
+          avb_process_1722_control_packet(buf, packet_info.len, packet_info.type, i_eth_tx, i_avb,
+                                          i_1722_1_entity, c_ptp);
+          break;
       }
       // Periodic processing
       case tmr when timerafter(periodic_timeout) :> unsigned int time_now:
       {
-        avb_1722_1_periodic(i_eth_tx, c_ptp, i_avb);
-        avb_1722_maap_periodic(i_eth_tx, i_avb);
+          avb_1722_1_periodic(i_eth_tx, c_ptp, i_avb);
+          avb_1722_maap_periodic(i_eth_tx, i_avb);
 
-        periodic_timeout += PERIODIC_POLL_TIME;
-        break;
+          periodic_timeout += PERIODIC_POLL_TIME;
+          break;
       }
-    }
+      }
   }
 }

@@ -28,24 +28,23 @@
 #define MAX_AVB_STREAMS_PER_LISTENER 4
 #endif
 
-
 typedef struct avb_1722_stream_info_t {
-  uint8_t active;                  //!< 1-bit flag to say if the stream is active
-  uint8_t state;                   //!< Generic state info
-  uint8_t last_sequence;           //!< The sequence number from the last 1722 packet
-  int chan_lock;                   //!< Counter for locking onto a data stream
-  int rate;                        //!< The estimated rate of the audio traffic
-  int prev_num_samples;            //!< Number of samples in last received 1722 packet
-  int num_channels_in_payload;     //!< The number of channels in the 1722 payloads
-  int num_channels;
-  int dbc;                         //!< The DBC of the last seen packet
-  audio_output_fifo_t map[AVB_MAX_CHANNELS_PER_LISTENER_STREAM];
+    uint8_t active;              //!< 1-bit flag to say if the stream is active
+    uint8_t state;               //!< Generic state info
+    uint8_t last_sequence;       //!< The sequence number from the last 1722 packet
+    int chan_lock;               //!< Counter for locking onto a data stream
+    int rate;                    //!< The estimated rate of the audio traffic
+    int prev_num_samples;        //!< Number of samples in last received 1722 packet
+    int num_channels_in_payload; //!< The number of channels in the 1722
+                                 //!< payloads
+    int num_channels;
+    int dbc; //!< The DBC of the last seen packet
+    audio_output_fifo_t map[AVB_MAX_CHANNELS_PER_LISTENER_STREAM];
 } avb_1722_stream_info_t;
-
 
 #ifdef __XC__
 int avb_1722_listener_process_packet(chanend? buf_ctl,
-                                     unsigned char Buf[],
+                                     uint8_t Buf[],
                                      int numBytes,
                                      REFERENCE_PARAM(avb_1722_stream_info_t, stream_info),
                                      NULLABLE_REFERENCE_PARAM(ptp_time_info_mod64, timeInfo),
@@ -54,25 +53,24 @@ int avb_1722_listener_process_packet(chanend? buf_ctl,
                                      buffer_handle_t h);
 #else
 int avb_1722_listener_process_packet(chanend buf_ctl,
-                                     unsigned char Buf[],
+                                     uint8_t Buf[],
                                      int numBytes,
                                      REFERENCE_PARAM(avb_1722_stream_info_t, stream_info),
-				                             REFERENCE_PARAM(ptp_time_info_mod64, timeInfo),
+                                     REFERENCE_PARAM(ptp_time_info_mod64, timeInfo),
                                      int index,
                                      REFERENCE_PARAM(int, notified_buf_ctl),
                                      buffer_handle_t h);
 #endif
 
 struct listener_counters {
-  unsigned received_1722;
+    unsigned received_1722;
 };
 
 typedef struct avb_1722_listener_state_s {
-  avb_1722_stream_info_t listener_streams[MAX_AVB_STREAMS_PER_LISTENER];
-  int notified_buf_ctl;
-  int router_link;
-  struct listener_counters counters;
+    avb_1722_stream_info_t listener_streams[MAX_AVB_STREAMS_PER_LISTENER];
+    int notified_buf_ctl;
+    int router_link;
+    struct listener_counters counters;
 } avb_1722_listener_state_t;
-
 
 #endif

@@ -1,8 +1,10 @@
 // Copyright (c) 2013-2017, XMOS Ltd, All rights reserved
+
+#pragma once
+
 #include <inttypes.h>
 
-typedef struct aem_desc_audio_unit_t
-{
+typedef struct aem_desc_audio_unit_t {
     uint8_t descriptor_type[2];
     uint8_t descriptor_index[2];
     uint8_t object_name[64];
@@ -46,8 +48,7 @@ typedef struct aem_desc_audio_unit_t
     // sampling_rates
 } aem_desc_audio_unit_t;
 
-typedef struct aem_desc_control_t
-{
+typedef struct aem_desc_control_t {
     uint8_t descriptor_type[2];
     uint8_t descriptor_index[2];
     uint8_t object_name[64];
@@ -66,8 +67,7 @@ typedef struct aem_desc_control_t
     // value_details
 } aem_desc_control_t;
 
-typedef struct aem_desc_signal_selector_t
-{
+typedef struct aem_desc_signal_selector_t {
     uint8_t descriptor_type[2];
     uint8_t descriptor_index[2];
     uint8_t object_name[64];
@@ -86,8 +86,7 @@ typedef struct aem_desc_signal_selector_t
     // sources
 } aem_desc_signal_selector_t;
 
-typedef struct aem_desc_clock_domain_t
-{
+typedef struct aem_desc_clock_domain_t {
     uint8_t descriptor_type[2];
     uint8_t descriptor_index[2];
     uint8_t object_name[64];
@@ -132,8 +131,8 @@ typedef struct aem_desc_stream_input_output_t {
     uint8_t backedup_talker_unique_id[2];
     uint8_t avb_interface_index[2];
     uint8_t buffer_length[4];
-    #define MAX_NUM_STREAM_FORMATS 16
-    uint8_t formats[16*MAX_NUM_STREAM_FORMATS];
+#define MAX_NUM_STREAM_FORMATS 16
+    uint8_t formats[16 * MAX_NUM_STREAM_FORMATS];
 } aem_desc_stream_input_output_t;
 
 typedef struct aem_audio_map_format_t {
@@ -148,7 +147,7 @@ typedef struct aem_desc_audio_map_t {
     uint8_t descriptor_index[2];
     uint8_t mappings_offset[2];
     uint8_t number_of_mappings[2];
-    #define MAX_NUM_MAPPINGS 8
+#define MAX_NUM_MAPPINGS 8
     aem_audio_map_format_t mappings[MAX_NUM_MAPPINGS];
 } aem_desc_audio_map_t;
 

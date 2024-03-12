@@ -1,6 +1,6 @@
 // Copyright (c) 2011-2017, XMOS Ltd, All rights reserved
-#ifndef AVB_1722_1_DEFAULT_CONF_H_
-#define AVB_1722_1_DEFAULT_CONF_H_
+
+#pragma once
 
 /* Must include avb_conf.h as it may redefine the default defines here */
 #include "default_avb_conf.h"
@@ -40,8 +40,8 @@
 #endif
 
 #ifndef AVB_1722_1_ADP_VALID_TIME
-#define AVB_1722_1_ADP_VALID_TIME (10)  // 31*2 = 62 seconds validity time
-#define AVB_1722_1_ADP_REPEAT_TIME (AVB_1722_1_ADP_VALID_TIME/2)
+#define AVB_1722_1_ADP_VALID_TIME  (10) // 31*2 = 62 seconds validity time
+#define AVB_1722_1_ADP_REPEAT_TIME (AVB_1722_1_ADP_VALID_TIME / 2)
 #endif
 
 #ifndef AVB_1722_1_ADP_VENDOR_ID
@@ -54,16 +54,18 @@
 
 #ifndef AVB_1722_1_ADP_ENTITY_CAPABILITIES
 #if AVB_1722_1_AEM_ENABLED
-#define AVB_1722_1_ADP_ENTITY_CAPABILITIES (AVB_1722_1_ADP_ENTITY_CAPABILITIES_AEM_SUPPORTED| \
-                                            AVB_1722_1_ADP_ENTITY_CAPABILITIES_CLASS_A_SUPPORTED| \
-                                            AVB_1722_1_ADP_ENTITY_CAPABILITIES_GPTP_SUPPORTED| \
-                                            AVB_1722_1_ADP_ENTITY_CAPABILITIES_EFU_MODE| \
-                                            AVB_1722_1_ADP_ENTITY_CAPABILITIES_ADDRESS_ACCESS_SUPPORTED)
+#define AVB_1722_1_ADP_ENTITY_CAPABILITIES                                                         \
+    (AVB_1722_1_ADP_ENTITY_CAPABILITIES_AEM_SUPPORTED |                                            \
+     AVB_1722_1_ADP_ENTITY_CAPABILITIES_CLASS_A_SUPPORTED |                                        \
+     AVB_1722_1_ADP_ENTITY_CAPABILITIES_GPTP_SUPPORTED |                                           \
+     AVB_1722_1_ADP_ENTITY_CAPABILITIES_EFU_MODE |                                                 \
+     AVB_1722_1_ADP_ENTITY_CAPABILITIES_ADDRESS_ACCESS_SUPPORTED)
 #else
-#define AVB_1722_1_ADP_ENTITY_CAPABILITIES (AVB_1722_1_ADP_ENTITY_CAPABILITIES_CLASS_A_SUPPORTED| \
-                                            AVB_1722_1_ADP_ENTITY_CAPABILITIES_GPTP_SUPPORTED| \
-                                            AVB_1722_1_ADP_ENTITY_CAPABILITIES_EFU_MODE| \
-                                            AVB_1722_1_ADP_ENTITY_CAPABILITIES_ADDRESS_ACCESS_SUPPORTED)
+#define AVB_1722_1_ADP_ENTITY_CAPABILITIES                                                         \
+    (AVB_1722_1_ADP_ENTITY_CAPABILITIES_CLASS_A_SUPPORTED |                                        \
+     AVB_1722_1_ADP_ENTITY_CAPABILITIES_GPTP_SUPPORTED |                                           \
+     AVB_1722_1_ADP_ENTITY_CAPABILITIES_EFU_MODE |                                                 \
+     AVB_1722_1_ADP_ENTITY_CAPABILITIES_ADDRESS_ACCESS_SUPPORTED)
 #endif
 #endif
 
@@ -73,9 +75,10 @@
 
 #ifndef AVB_1722_1_ADP_TALKER_CAPABILITIES
 #if AVB_1722_1_TALKER_ENABLED
-#define AVB_1722_1_ADP_TALKER_CAPABILITIES (AVB_1722_1_ADP_TALKER_CAPABILITIES_IMPLEMENTED| \
-                                            AVB_1722_1_ADP_TALKER_CAPABILITIES_AUDIO_SOURCE| \
-                                            AVB_1722_1_ADP_TALKER_CAPABILITIES_MEDIA_CLOCK_SOURCE)
+#define AVB_1722_1_ADP_TALKER_CAPABILITIES                                                         \
+    (AVB_1722_1_ADP_TALKER_CAPABILITIES_IMPLEMENTED |                                              \
+     AVB_1722_1_ADP_TALKER_CAPABILITIES_AUDIO_SOURCE |                                             \
+     AVB_1722_1_ADP_TALKER_CAPABILITIES_MEDIA_CLOCK_SOURCE)
 #else
 #define AVB_1722_1_ADP_TALKER_CAPABILITIES 0
 #endif
@@ -87,7 +90,9 @@
 
 #ifndef AVB_1722_1_ADP_LISTENER_CAPABILITIES
 #if AVB_1722_1_LISTENER_ENABLED
-#define AVB_1722_1_ADP_LISTENER_CAPABILITIES (AVB_1722_1_ADP_LISTENER_CAPABILITIES_IMPLEMENTED|AVB_1722_1_ADP_LISTENER_CAPABILITIES_AUDIO_SINK)
+#define AVB_1722_1_ADP_LISTENER_CAPABILITIES                                                       \
+    (AVB_1722_1_ADP_LISTENER_CAPABILITIES_IMPLEMENTED |                                            \
+     AVB_1722_1_ADP_LISTENER_CAPABILITIES_AUDIO_SINK)
 #else
 #define AVB_1722_1_ADP_LISTENER_CAPABILITIES 0
 #endif
@@ -130,7 +135,7 @@
 #endif
 
 #ifndef AVB_1722_1_MAX_INFLIGHT_COMMANDS
-#define AVB_1722_1_MAX_INFLIGHT_COMMANDS (AVB_1722_1_MAX_LISTENERS*2)
+#define AVB_1722_1_MAX_INFLIGHT_COMMANDS (AVB_1722_1_MAX_LISTENERS * 2)
 #endif
 
 /* Debug defines */
@@ -138,5 +143,3 @@
 #ifndef AVB_1722_1_ADP_DEBUG_ENTITY_REMOVAL
 #define AVB_1722_1_ADP_DEBUG_ENTITY_REMOVAL
 #endif
-
-#endif /* AVB_1722_1_DEFAULT_CONF_H_ */

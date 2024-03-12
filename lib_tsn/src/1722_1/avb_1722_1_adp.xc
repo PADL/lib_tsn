@@ -14,42 +14,54 @@
 #include "avb_1722_1.h"
 
 /* Enumerations for state variables */
-static enum { ADP_ADVERTISE_IDLE = 0,
-       ADP_ADVERTISE_WAITING,
-       ADP_ADVERTISE_ADVERTISE_0,
-       ADP_ADVERTISE_ADVERTISE_1,
-       ADP_ADVERTISE_DEPARTING,
-       ADP_ADVERTISE_DEPART_THEN_ADVERTISE
+static enum {
+    ADP_ADVERTISE_IDLE = 0,
+    ADP_ADVERTISE_WAITING,
+    ADP_ADVERTISE_ADVERTISE_0,
+    ADP_ADVERTISE_ADVERTISE_1,
+    ADP_ADVERTISE_DEPARTING,
+    ADP_ADVERTISE_DEPART_THEN_ADVERTISE
 } adp_advertise_state = ADP_ADVERTISE_IDLE;
 
-static const char * alias
-adp_advertise_state_to_string(unsigned int state) {
+static const char *alias adp_advertise_state_to_string(unsigned int state) {
     switch (state) {
-    case ADP_ADVERTISE_IDLE: return "IDLE";
-    case ADP_ADVERTISE_WAITING: return "WAITING";
-    case ADP_ADVERTISE_ADVERTISE_0: return "ADVERTISE_0";
-    case ADP_ADVERTISE_ADVERTISE_1: return "ADVERTISE_1";
-    case ADP_ADVERTISE_DEPARTING: return "DEPARTING";
-    case ADP_ADVERTISE_DEPART_THEN_ADVERTISE: return "DEPART_THEN_ADVERTISE";
-    default: return "UNKNOWN";
+    case ADP_ADVERTISE_IDLE:
+        return "IDLE";
+    case ADP_ADVERTISE_WAITING:
+        return "WAITING";
+    case ADP_ADVERTISE_ADVERTISE_0:
+        return "ADVERTISE_0";
+    case ADP_ADVERTISE_ADVERTISE_1:
+        return "ADVERTISE_1";
+    case ADP_ADVERTISE_DEPARTING:
+        return "DEPARTING";
+    case ADP_ADVERTISE_DEPART_THEN_ADVERTISE:
+        return "DEPART_THEN_ADVERTISE";
+    default:
+        return "UNKNOWN";
     }
 }
 
-static enum { ADP_DISCOVERY_IDLE = 0,
-       ADP_DISCOVERY_WAITING,
-       ADP_DISCOVERY_DISCOVER,
-       ADP_DISCOVERY_ADDED,
-       ADP_DISCOVERY_REMOVED
+static enum {
+    ADP_DISCOVERY_IDLE = 0,
+    ADP_DISCOVERY_WAITING,
+    ADP_DISCOVERY_DISCOVER,
+    ADP_DISCOVERY_ADDED,
+    ADP_DISCOVERY_REMOVED
 } adp_discovery_state = ADP_DISCOVERY_IDLE;
 
-static const char * alias
-adp_discovery_state_to_string(unsigned int state) {
+static const char *alias adp_discovery_state_to_string(unsigned int state) {
     switch (state) {
-    case ADP_DISCOVERY_WAITING: return "WAITING";
-    case ADP_DISCOVERY_DISCOVER: return "DISCOVER";
-    case ADP_DISCOVERY_ADDED: return "ADDED";
-    case ADP_DISCOVERY_REMOVED: return "REMOVED";
-    default: return "UNKNOWN";
+    case ADP_DISCOVERY_WAITING:
+        return "WAITING";
+    case ADP_DISCOVERY_DISCOVER:
+        return "DISCOVER";
+    case ADP_DISCOVERY_ADDED:
+        return "ADDED";
+    case ADP_DISCOVERY_REMOVED:
+        return "REMOVED";
+    default:
+        return "UNKNOWN";
     }
 }
 
@@ -58,7 +70,7 @@ extern guid_t my_guid;
 // The GUID whose information we are currently trying to discover
 static guid_t discover_guid;
 
-unsigned char avb_1722_1_adp_dest_addr[6] = AVB_1722_1_ADP_DEST_MAC;
+uint8_t avb_1722_1_adp_dest_addr[6] = AVB_1722_1_ADP_DEST_MAC;
 
 // The ADP available index counter
 static unsigned long avb_1722_1_available_index = 0;
@@ -79,9 +91,7 @@ static unsigned adp_two_second_counter = 0;
 avb_1722_1_entity_record entities[AVB_1722_1_MAX_ENTITIES];
 static int adp_latest_entity_added_index = -1;
 
-
-void avb_1722_1_adp_init()
-{
+void avb_1722_1_adp_init() {
     avb_1722_1_entity_database_flush();
     init_avb_timer(adp_advertise_timer, 1);
     init_avb_timer(adp_readvertise_timer, 100);
@@ -97,71 +107,52 @@ void avb_1722_1_adp_init()
     start_avb_timer(adp_discovery_timer, 1);
 }
 
-void avb_1722_1_adp_announce()
-{
-    if (adp_advertise_state == ADP_ADVERTISE_IDLE ||
-        adp_advertise_state == ADP_ADVERTISE_WAITING)
-    {
+void avb_1722_1_adp_announce() {
+    if (adp_advertise_state == ADP_ADVERTISE_IDLE || adp_advertise_state == ADP_ADVERTISE_WAITING) {
         adp_advertise_state = ADP_ADVERTISE_ADVERTISE_0;
     }
 }
 
-void avb_1722_1_adp_depart()
-{
-    if (adp_advertise_state == ADP_ADVERTISE_IDLE ||
-        adp_advertise_state == ADP_ADVERTISE_WAITING)
-    {
+void avb_1722_1_adp_depart() {
+    if (adp_advertise_state == ADP_ADVERTISE_IDLE || adp_advertise_state == ADP_ADVERTISE_WAITING) {
         adp_advertise_state = ADP_ADVERTISE_DEPARTING;
     }
 }
 
-void avb_1722_1_adp_depart_then_announce()
-{
-    if (adp_advertise_state == ADP_ADVERTISE_IDLE ||
-        adp_advertise_state == ADP_ADVERTISE_WAITING)
-    {
+void avb_1722_1_adp_depart_then_announce() {
+    if (adp_advertise_state == ADP_ADVERTISE_IDLE || adp_advertise_state == ADP_ADVERTISE_WAITING) {
         adp_advertise_state = ADP_ADVERTISE_DEPART_THEN_ADVERTISE;
     }
 }
 
-void avb_1722_1_adp_discover(const_guid_ref_t guid)
-{
-    if (adp_discovery_state == ADP_DISCOVERY_WAITING)
-    {
+void avb_1722_1_adp_discover(const_guid_ref_t guid) {
+    if (adp_discovery_state == ADP_DISCOVERY_WAITING) {
         adp_discovery_state = ADP_DISCOVERY_DISCOVER;
         discover_guid.l = guid.l;
     }
 }
 
-void avb_1722_1_adp_discover_all()
-{
+void avb_1722_1_adp_discover_all() {
     guid_t guid;
     guid.l = 0;
     avb_1722_1_adp_discover(guid);
 }
 
-void avb_1722_1_adp_change_ptp_grandmaster(unsigned char grandmaster[8])
-{
+void avb_1722_1_adp_change_ptp_grandmaster(uint8_t grandmaster[8]) {
     memcpy(gptp_grandmaster_id.c, grandmaster, 8);
 }
 
-int avb_1722_1_get_latest_new_entity_idx()
-{
-    return adp_latest_entity_added_index;
-}
+int avb_1722_1_get_latest_new_entity_idx() { return adp_latest_entity_added_index; }
 
-int avb_1722_1_entity_database_find(const_guid_ref_t guid)
-{
-    for (int i=0; i < AVB_1722_1_MAX_ENTITIES; ++i)
-    {
+int avb_1722_1_entity_database_find(const_guid_ref_t guid) {
+    for (int i = 0; i < AVB_1722_1_MAX_ENTITIES; ++i) {
         if (entities[i].guid.l == guid.l)
             return i;
     }
     return AVB_1722_1_MAX_ENTITIES;
 }
 
-static int avb_1722_1_entity_database_add(avb_1722_1_adp_packet_t &pkt)
-{
+static int avb_1722_1_entity_database_add(avb_1722_1_adp_packet_t &pkt) {
     guid_t guid;
     int found_slot_index = -1;
     int i;
@@ -169,23 +160,19 @@ static int avb_1722_1_entity_database_add(avb_1722_1_adp_packet_t &pkt)
 
     get_64(guid.c, pkt.entity_guid);
 
-    for (i=0; i < AVB_1722_1_MAX_ENTITIES; ++i)
-    {
-        if (entities[i].guid.l == 0)
-        {
-            found_slot_index = i;  // Found an empty entry in the database
-        }
-        else if (entities[i].guid.l == guid.l)
-        {
-            // Entity is already in the database - break from loop early and update it
+    for (i = 0; i < AVB_1722_1_MAX_ENTITIES; ++i) {
+        if (entities[i].guid.l == 0) {
+            found_slot_index = i; // Found an empty entry in the database
+        } else if (entities[i].guid.l == guid.l) {
+            // Entity is already in the database - break from loop early and
+            // update it
             found_slot_index = i;
             entity_update = 1;
             break;
         }
     }
 
-    if (found_slot_index != -1)
-    {
+    if (found_slot_index != -1) {
         entities[found_slot_index].guid.l = guid.l;
         entities[found_slot_index].vendor_id = ntoh_32(pkt.vendor_id);
         entities[found_slot_index].entity_model_id = ntoh_32(pkt.entity_model_id);
@@ -200,120 +187,108 @@ static int avb_1722_1_entity_database_add(avb_1722_1_adp_packet_t &pkt)
         entities[found_slot_index].gptp_domain_number = pkt.gptp_domain_number;
         entities[found_slot_index].identify_control_index = ntoh_16(pkt.identify_control_index);
         entities[found_slot_index].association_id = ntoh_32(pkt.association_id);
-        entities[found_slot_index].timeout = GET_1722_1_VALID_TIME(&pkt.header) + adp_two_second_counter;
-        if (entity_update)
-        {
+        entities[found_slot_index].timeout =
+            GET_1722_1_VALID_TIME(&pkt.header) + adp_two_second_counter;
+        if (entity_update) {
             return 0;
-        }
-        else
-        {
+        } else {
             adp_latest_entity_added_index = found_slot_index;
             return 1;
         }
-    }
-    else
-    {
+    } else {
         debug_printf("avb_1722_1_entity_database_add: database full\n");
-        // TODO: Database full - we should have a scheme for dealing with this (LRU cache?)
+        // TODO: Database full - we should have a scheme for dealing with this
+        // (LRU cache?)
     }
 
     return 0;
 }
 
-void avb_1722_1_entity_database_flush(void)
-{
-    for (int i=0; i < AVB_1722_1_MAX_ENTITIES; ++i)
-    {
+void avb_1722_1_entity_database_flush(void) {
+    for (int i = 0; i < AVB_1722_1_MAX_ENTITIES; ++i) {
         entities[i].guid.l = 0;
     }
 }
 
-static void avb_1722_1_entity_database_remove(avb_1722_1_adp_packet_t &pkt)
-{
+static void avb_1722_1_entity_database_remove(avb_1722_1_adp_packet_t &pkt) {
     guid_t guid;
     int i;
     get_64(guid.c, pkt.entity_guid);
 
     i = avb_1722_1_entity_database_find(guid);
 
-    if (i != AVB_1722_1_MAX_ENTITIES)
-    {
+    if (i != AVB_1722_1_MAX_ENTITIES) {
 #ifdef AVB_1722_1_ADP_DEBUG_ENTITY_REMOVAL
-        printstr("ADP: Removing entity who advertised departing -> GUID "); print_guid_ln(entities[i].guid);
+        printstr("ADP: Removing entity who advertised departing -> GUID ");
+        print_guid_ln(entities[i].guid);
 #endif
         entities[i].guid.l = 0;
     }
 }
 
-static unsigned avb_1722_1_entity_database_check_timeout()
-{
+static unsigned avb_1722_1_entity_database_check_timeout() {
     int i;
 
-    for (i=0; i < AVB_1722_1_MAX_ENTITIES; ++i)
-    {
-        if (entities[i].guid.l==0) continue;
+    for (i = 0; i < AVB_1722_1_MAX_ENTITIES; ++i) {
+        if (entities[i].guid.l == 0)
+            continue;
 
-        if (entities[i].timeout < adp_two_second_counter)
-        {
+        if (entities[i].timeout < adp_two_second_counter) {
 #ifdef AVB_1722_1_ADP_DEBUG_ENTITY_REMOVAL
-            printstr("ADP: Removing entity who timed out -> GUID "); print_guid_ln(entities[i].guid);
+            printstr("ADP: Removing entity who timed out -> GUID ");
+            print_guid_ln(entities[i].guid);
 #endif
-            entities[i].guid.l=0;
+            entities[i].guid.l = 0;
             return 1;
         }
     }
     return 0;
 }
 
-void process_avb_1722_1_adp_packet(avb_1722_1_adp_packet_t &pkt, client interface ethernet_tx_if i_eth)
-{
-    unsigned message_type = GET_1722_1_MSG_TYPE(((avb_1722_1_packet_header_t*)&pkt));
-    guid_t zero_guid = { 0 };
+void process_avb_1722_1_adp_packet(avb_1722_1_adp_packet_t &pkt,
+                                   client interface ethernet_tx_if i_eth) {
+    unsigned message_type = GET_1722_1_MSG_TYPE(((avb_1722_1_packet_header_t *)&pkt));
+    guid_t zero_guid = {0};
 
-    switch (message_type)
-    {
-        case ENTITY_DISCOVER:
-        {
-            if ( compare_guid(pkt.entity_guid, my_guid) || compare_guid(pkt.entity_guid, zero_guid) )
-            {
-                if (adp_advertise_state == ADP_ADVERTISE_WAITING)
-                    adp_advertise_state = ADP_ADVERTISE_ADVERTISE_1;
-            }
-            return;
+    switch (message_type) {
+    case ENTITY_DISCOVER: {
+        if (compare_guid(pkt.entity_guid, my_guid) || compare_guid(pkt.entity_guid, zero_guid)) {
+            if (adp_advertise_state == ADP_ADVERTISE_WAITING)
+                adp_advertise_state = ADP_ADVERTISE_ADVERTISE_1;
         }
-        case ENTITY_AVAILABLE:
-        {
-            if (avb_1722_1_entity_database_add(pkt))
-            {
-                /* We only indicate ADP_DISCOVERY_ADDED state if a new (unseen) entity was added,
-                 * and not if an existing entity was updated
-                 */
-                adp_discovery_state = ADP_DISCOVERY_ADDED;
-            }
-            return;
+        return;
+    }
+    case ENTITY_AVAILABLE: {
+        if (avb_1722_1_entity_database_add(pkt)) {
+            /* We only indicate ADP_DISCOVERY_ADDED state if a new (unseen)
+             * entity was added, and not if an existing entity was updated
+             */
+            adp_discovery_state = ADP_DISCOVERY_ADDED;
         }
-        case ENTITY_DEPARTING:
-        {
-            avb_1722_1_entity_database_remove(pkt);
-            adp_discovery_state = ADP_DISCOVERY_REMOVED;
-            return;
-        }
+        return;
+    }
+    case ENTITY_DEPARTING: {
+        avb_1722_1_entity_database_remove(pkt);
+        adp_discovery_state = ADP_DISCOVERY_REMOVED;
+        return;
+    }
     }
 }
 
-static void avb_1722_1_create_adp_packet(int message_type, guid_t guid)
-{
-    ethernet_hdr_t *hdr = (ethernet_hdr_t*) &avb_1722_1_buf[0];
-    avb_1722_1_adp_packet_t *pkt = (avb_1722_1_adp_packet_t*) (hdr + AVB_1722_1_PACKET_BODY_POINTER_OFFSET);
+static void avb_1722_1_create_adp_packet(int message_type, guid_t guid) {
+    ethernet_hdr_t *hdr = (ethernet_hdr_t *)&avb_1722_1_buf[0];
+    avb_1722_1_adp_packet_t *pkt =
+        (avb_1722_1_adp_packet_t *)(hdr + AVB_1722_1_PACKET_BODY_POINTER_OFFSET);
 
     memset((avb_1722_1_adp_packet_t *)pkt, 0, sizeof(avb_1722_1_adp_packet_t));
-    avb_1722_1_create_1722_1_header(avb_1722_1_adp_dest_addr, DEFAULT_1722_1_ADP_SUBTYPE, message_type,
-          (message_type==ENTITY_AVAILABLE)?AVB_1722_1_ADP_VALID_TIME:0, AVB_1722_1_ADP_CD_LENGTH, hdr);
+    avb_1722_1_create_1722_1_header(
+        avb_1722_1_adp_dest_addr, DEFAULT_1722_1_ADP_SUBTYPE, message_type,
+        (message_type == ENTITY_AVAILABLE) ? AVB_1722_1_ADP_VALID_TIME : 0,
+        AVB_1722_1_ADP_CD_LENGTH, hdr);
 
     set_64(pkt->entity_guid, guid.c);
 
-    if (message_type != ENTITY_DISCOVER)
-    {
+    if (message_type != ENTITY_DISCOVER) {
         hton_32(pkt->vendor_id, AVB_1722_1_ADP_VENDOR_ID);
         hton_32(pkt->entity_model_id, AVB_1722_1_ADP_MODEL_ID);
         hton_32(pkt->entity_capabilities, AVB_1722_1_ADP_ENTITY_CAPABILITIES);
@@ -335,112 +310,105 @@ static void avb_1722_1_create_adp_packet(int message_type, guid_t guid)
     }
 }
 
-void avb_1722_1_adp_discovery_periodic(client interface ethernet_tx_if i_eth, client interface avb_interface avb_api)
-{
-    switch (adp_discovery_state)
-    {
-        case ADP_DISCOVERY_IDLE:
-            break;
+void avb_1722_1_adp_discovery_periodic(client interface ethernet_tx_if i_eth,
+                                       client interface avb_interface avb_api) {
+    switch (adp_discovery_state) {
+    case ADP_DISCOVERY_IDLE:
+        break;
 
-        case ADP_DISCOVERY_WAITING:
-        {
-            unsigned lost=0;
-            if (avb_timer_expired(adp_discovery_timer))
-            {
-                adp_two_second_counter++;
-                lost = avb_1722_1_entity_database_check_timeout();
-                start_avb_timer(adp_discovery_timer, 1);
-            }
-            if (lost > 0)
-            {
-                // Do nothing
-            }
-            break;
+    case ADP_DISCOVERY_WAITING: {
+        unsigned lost = 0;
+        if (avb_timer_expired(adp_discovery_timer)) {
+            adp_two_second_counter++;
+            lost = avb_1722_1_entity_database_check_timeout();
+            start_avb_timer(adp_discovery_timer, 1);
         }
-        case ADP_DISCOVERY_DISCOVER:
-        {
-            avb_1722_1_create_adp_packet(ENTITY_DISCOVER, discover_guid);
-            i_eth.send_packet((avb_1722_1_buf, unsigned char[]), AVB_1722_1_ADP_PACKET_SIZE, ETHERNET_ALL_INTERFACES);
-            adp_discovery_state = ADP_DISCOVERY_WAITING;
-            break;
+        if (lost > 0) {
+            // Do nothing
         }
-        case ADP_DISCOVERY_ADDED:
-        {
+        break;
+    }
+    case ADP_DISCOVERY_DISCOVER: {
+        avb_1722_1_create_adp_packet(ENTITY_DISCOVER, discover_guid);
+        i_eth.send_packet((avb_1722_1_buf, uint8_t[]), AVB_1722_1_ADP_PACKET_SIZE,
+                          ETHERNET_ALL_INTERFACES);
+        adp_discovery_state = ADP_DISCOVERY_WAITING;
+        break;
+    }
+    case ADP_DISCOVERY_ADDED: {
 #if AVB_ENABLE_1722_1
-            avb_entity_on_new_entity_available(avb_api, my_guid, &entities[adp_latest_entity_added_index], i_eth);
+        avb_entity_on_new_entity_available(avb_api, my_guid,
+                                           &entities[adp_latest_entity_added_index], i_eth);
 #endif
-            adp_discovery_state = ADP_DISCOVERY_WAITING;
-            break;
-        }
-        case ADP_DISCOVERY_REMOVED:
-        {
-            adp_discovery_state = ADP_DISCOVERY_WAITING;
-            break;
-        }
+        adp_discovery_state = ADP_DISCOVERY_WAITING;
+        break;
+    }
+    case ADP_DISCOVERY_REMOVED: {
+        adp_discovery_state = ADP_DISCOVERY_WAITING;
+        break;
+    }
     }
 }
 
-void avb_1722_1_adp_depart_immediately(client interface ethernet_tx_if i_eth)
-{
+void avb_1722_1_adp_depart_immediately(client interface ethernet_tx_if i_eth) {
     avb_1722_1_create_adp_packet(ENTITY_DEPARTING, my_guid);
-    i_eth.send_packet((avb_1722_1_buf, unsigned char[]), AVB_1722_1_ADP_PACKET_SIZE, ETHERNET_ALL_INTERFACES);
+    i_eth.send_packet((avb_1722_1_buf, uint8_t[]), AVB_1722_1_ADP_PACKET_SIZE,
+                      ETHERNET_ALL_INTERFACES);
 }
 
-void avb_1722_1_adp_advertising_periodic(client interface ethernet_tx_if i_eth, chanend ptp)
-{
+void avb_1722_1_adp_advertising_periodic(client interface ethernet_tx_if i_eth, chanend ptp) {
     guid_t ptp_current;
 
-    switch (adp_advertise_state)
-    {
-        case ADP_ADVERTISE_IDLE:
-            break;
+    switch (adp_advertise_state) {
+    case ADP_ADVERTISE_IDLE:
+        break;
 
-        case ADP_ADVERTISE_WAITING:
-            if (avb_timer_expired(adp_readvertise_timer))
-            {
-                adp_advertise_state = ADP_ADVERTISE_ADVERTISE_1;
-            }
-            break;
-
-        case ADP_ADVERTISE_ADVERTISE_0:
-            avb_1722_1_adp_change_ptp_grandmaster(ptp_current.c);
-            start_avb_timer(ptp_monitor_timer, 1); //Every second
+    case ADP_ADVERTISE_WAITING:
+        if (avb_timer_expired(adp_readvertise_timer)) {
             adp_advertise_state = ADP_ADVERTISE_ADVERTISE_1;
-            [[fallthrough]];
+        }
+        break;
 
-        case ADP_ADVERTISE_ADVERTISE_1:
-            avb_1722_1_create_adp_packet(ENTITY_AVAILABLE, my_guid);
-            i_eth.send_packet((avb_1722_1_buf, unsigned char[]), AVB_1722_1_ADP_PACKET_SIZE, ETHERNET_ALL_INTERFACES);
+    case ADP_ADVERTISE_ADVERTISE_0:
+        avb_1722_1_adp_change_ptp_grandmaster(ptp_current.c);
+        start_avb_timer(ptp_monitor_timer, 1); // Every second
+        adp_advertise_state = ADP_ADVERTISE_ADVERTISE_1;
+        [[fallthrough]];
 
-            start_avb_timer(adp_readvertise_timer, AVB_1722_1_ADP_REPEAT_TIME);
-            adp_advertise_state = ADP_ADVERTISE_WAITING;
-            avb_1722_1_available_index++;
-            break;
+    case ADP_ADVERTISE_ADVERTISE_1:
+        avb_1722_1_create_adp_packet(ENTITY_AVAILABLE, my_guid);
+        i_eth.send_packet((avb_1722_1_buf, uint8_t[]), AVB_1722_1_ADP_PACKET_SIZE,
+                          ETHERNET_ALL_INTERFACES);
 
-        case ADP_ADVERTISE_DEPART_THEN_ADVERTISE:
-        case ADP_ADVERTISE_DEPARTING:
-            avb_1722_1_create_adp_packet(ENTITY_DEPARTING, my_guid);
-            i_eth.send_packet((avb_1722_1_buf, unsigned char[]), AVB_1722_1_ADP_PACKET_SIZE, ETHERNET_ALL_INTERFACES);
+        start_avb_timer(adp_readvertise_timer, AVB_1722_1_ADP_REPEAT_TIME);
+        adp_advertise_state = ADP_ADVERTISE_WAITING;
+        avb_1722_1_available_index++;
+        break;
 
-            adp_advertise_state = (adp_advertise_state == ADP_ADVERTISE_DEPART_THEN_ADVERTISE) ? ADP_ADVERTISE_ADVERTISE_0 : ADP_ADVERTISE_IDLE;
-            avb_1722_1_available_index = 0;
-            break;
+    case ADP_ADVERTISE_DEPART_THEN_ADVERTISE:
+    case ADP_ADVERTISE_DEPARTING:
+        avb_1722_1_create_adp_packet(ENTITY_DEPARTING, my_guid);
+        i_eth.send_packet((avb_1722_1_buf, uint8_t[]), AVB_1722_1_ADP_PACKET_SIZE,
+                          ETHERNET_ALL_INTERFACES);
 
-        default:
-            break;
+        adp_advertise_state = (adp_advertise_state == ADP_ADVERTISE_DEPART_THEN_ADVERTISE)
+                                  ? ADP_ADVERTISE_ADVERTISE_0
+                                  : ADP_ADVERTISE_IDLE;
+        avb_1722_1_available_index = 0;
+        break;
+
+    default:
+        break;
     }
 
-    if (ADP_ADVERTISE_IDLE != adp_advertise_state)
-    {
-        if (avb_timer_expired(ptp_monitor_timer))
-        {
+    if (ADP_ADVERTISE_IDLE != adp_advertise_state) {
+        if (avb_timer_expired(ptp_monitor_timer)) {
             ptp_get_current_grandmaster(ptp, ptp_current.c);
-            if (gptp_grandmaster_id.l != ptp_current.l)
-            {
+            if (gptp_grandmaster_id.l != ptp_current.l) {
                 avb_1722_1_adp_change_ptp_grandmaster(ptp_current.c);
                 adp_advertise_state = ADP_ADVERTISE_ADVERTISE_1;
             }
-            start_avb_timer(ptp_monitor_timer, 1); //Every second
+            start_avb_timer(ptp_monitor_timer, 1); // Every second
         }
     }
 }

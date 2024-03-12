@@ -18,16 +18,16 @@
 #if AVB_NUM_SOURCES != 0
 
 static transaction configure_stream(chanend avb1722_tx_config,
-               avb1722_Talker_StreamConfig_t &stream,
-               unsigned char mac_addr[MAC_ADRS_BYTE_COUNT]) {
-  unsigned int streamIdExt;
-  unsigned int rate;
-  unsigned int tmp;
+                                    avb1722_Talker_StreamConfig_t &stream,
+                                    uint8_t mac_addr[MAC_ADRS_BYTE_COUNT]) {
+    unsigned int streamIdExt;
+    unsigned int rate;
+    unsigned int tmp;
 
   avb1722_tx_config :> stream.sampleType;
 
   for (int i = 0; i < MAC_ADRS_BYTE_COUNT; i++) {
-    int x;
+      int x;
     avb1722_tx_config :> x;
     stream.destMACAdrs[i] = x;
     stream.srcMACAdrs[i] = mac_addr[i];
@@ -36,8 +36,7 @@ static transaction configure_stream(chanend avb1722_tx_config,
   stream.streamId[1] = ntoh_32(stream.srcMACAdrs);
 
   stream.streamId[0] =
-  ((unsigned) stream.srcMACAdrs[4] << 24) |
-  ((unsigned) stream.srcMACAdrs[5] << 16);
+      ((unsigned)stream.srcMACAdrs[4] << 24) | ((unsigned)stream.srcMACAdrs[5] << 16);
 
   avb1722_tx_config :> streamIdExt;
 
@@ -47,7 +46,7 @@ static transaction configure_stream(chanend avb1722_tx_config,
 
   avb1722_tx_config :> stream.fifo_mask;
 
-  for (int i=0;i<stream.num_channels;i++) {
+  for (int i = 0; i < stream.num_channels; i++) {
     avb1722_tx_config :> stream.map[i];
   }
 
@@ -55,18 +54,37 @@ static transaction configure_stream(chanend avb1722_tx_config,
 
   avb1722_tx_config :> stream.presentation_delay;
 
-  switch (rate)
-  {
-  case 8000:   stream.ts_interval = 1; break;
-  case 16000:  stream.ts_interval = 2; break;
-  case 32000:  stream.ts_interval = 8; break;
-  case 44100:  stream.ts_interval = 8; break;
-  case 48000:  stream.ts_interval = 8; break;
-  case 88200:  stream.ts_interval = 16; break;
-  case 96000:  stream.ts_interval = 16; break;
-  case 176400: stream.ts_interval = 32; break;
-  case 192000: stream.ts_interval = 32; break;
-  default: __builtin_trap(); break;
+  switch (rate) {
+  case 8000:
+    stream.ts_interval = 1;
+    break;
+  case 16000:
+    stream.ts_interval = 2;
+    break;
+  case 32000:
+    stream.ts_interval = 8;
+    break;
+  case 44100:
+    stream.ts_interval = 8;
+    break;
+  case 48000:
+    stream.ts_interval = 8;
+    break;
+  case 88200:
+    stream.ts_interval = 16;
+    break;
+  case 96000:
+    stream.ts_interval = 16;
+    break;
+  case 176400:
+    stream.ts_interval = 32;
+    break;
+  case 192000:
+    stream.ts_interval = 32;
+    break;
+  default:
+    __builtin_trap();
+    break;
   }
 
   tmp = ((rate / 100) << 16) / (AVB1722_PACKET_RATE / 100);
@@ -95,27 +113,20 @@ static void disable_stream(avb1722_Talker_StreamConfig_t &stream) {
   stream.active = 0;
 }
 
-
 static void start_stream(avb1722_Talker_StreamConfig_t &stream) {
   stream.sequence_number = 0;
   stream.initial = 1;
   stream.active = 2;
 }
 
-static void stop_stream(avb1722_Talker_StreamConfig_t &stream) {
-  stream.active = 1;
-}
+static void stop_stream(avb1722_Talker_StreamConfig_t &stream) { stream.active = 1; }
 
-
-void avb_1722_talker_init(chanend c_talker_ctl,
-                          avb_1722_talker_state_t &st,
-                          int num_streams)
- {
+void avb_1722_talker_init(chanend c_talker_ctl, avb_1722_talker_state_t &st, int num_streams) {
   st.vlan = 0;
   st.cur_avb_stream = 0;
   st.max_active_avb_stream = -1;
 
-  for (int i=0; i < AVB_NUM_SOURCES; i++) {
+  for (int i = 0; i < AVB_NUM_SOURCES; i++) {
     memset(&st.tx_buf[i], MAX_PKT_BUF_SIZE_TALKER, 0);
     st.tx_buf_fill_size[i] = 0;
   }
@@ -129,60 +140,45 @@ void avb_1722_talker_init(chanend c_talker_ctl,
   st.counters.sent_1722 = 0;
 }
 
-
 #pragma select handler
-void avb_1722_talker_handle_cmd(chanend c_talker_ctl,
-                                avb_1722_talker_state_t &st)
-{
+void avb_1722_talker_handle_cmd(chanend c_talker_ctl, avb_1722_talker_state_t &st) {
   int cmd;
   slave {
     c_talker_ctl :> cmd;
-    switch (cmd)
-    {
-    case AVB1722_CONFIGURE_TALKER_STREAM:
-      {
+    switch (cmd) {
+    case AVB1722_CONFIGURE_TALKER_STREAM: {
         int stream_num;
         c_talker_ctl :> stream_num;
-        configure_stream(c_talker_ctl,
-                         st.talker_streams[stream_num],
-                         st.mac_addr);
+        configure_stream(c_talker_ctl, st.talker_streams[stream_num], st.mac_addr);
         if (stream_num > st.max_active_avb_stream)
-          st.max_active_avb_stream = stream_num;
+            st.max_active_avb_stream = stream_num;
 
-        AVB1722_Talker_bufInit((st.tx_buf[stream_num],unsigned char[]),
-                               st.talker_streams[stream_num],
+        AVB1722_Talker_bufInit((st.tx_buf[stream_num], uint8_t[]), st.talker_streams[stream_num],
                                st.vlan);
 
-    }
-    break;
-    case AVB1722_DISABLE_TALKER_STREAM:
-    {
-      int stream_num;
+    } break;
+    case AVB1722_DISABLE_TALKER_STREAM: {
+        int stream_num;
       c_talker_ctl :> stream_num;
       disable_stream(st.talker_streams[stream_num]);
-    }
-    break;
-    case AVB1722_TALKER_GO:
-    {
+    } break;
+    case AVB1722_TALKER_GO: {
       int stream_num;
       c_talker_ctl :> stream_num;
       start_stream(st.talker_streams[stream_num]);
-    }
-    break;
-    case AVB1722_TALKER_STOP:
-    {
+    } break;
+    case AVB1722_TALKER_STOP: {
       int stream_num;
       c_talker_ctl :> stream_num;
       stop_stream(st.talker_streams[stream_num]);
-    }
-    break;
-    case AVB1722_SET_PORT:
-    {
+    } break;
+    case AVB1722_SET_PORT: {
       int stream_num;
       c_talker_ctl :> stream_num;
       c_talker_ctl :> st.talker_streams[stream_num].txport;
 #if NUM_ETHERNET_PORTS > 1
-      debug_printf("Setting stream %d 1722 TX port to %d\n", stream_num, st.talker_streams[stream_num].txport);
+      debug_printf("Setting stream %d 1722 TX port to %d\n", stream_num,
+                   st.talker_streams[stream_num].txport);
 #endif
       break;
     }
@@ -190,7 +186,7 @@ void avb_1722_talker_handle_cmd(chanend c_talker_ctl,
       int stream_num;
       c_talker_ctl :> stream_num;
       c_talker_ctl :> st.vlan; // Should we maintain a VLAN state per stream, or just set it in the buffer as below?
-      avb1722_set_buffer_vlan(st.vlan,(st.tx_buf[stream_num],unsigned char[]));
+      avb1722_set_buffer_vlan(st.vlan, (st.tx_buf[stream_num], uint8_t[]));
       break;
     case AVB1722_GET_COUNTERS:
       c_talker_ctl <: st.counters;
@@ -202,39 +198,39 @@ void avb_1722_talker_handle_cmd(chanend c_talker_ctl,
 }
 
 unsafe void avb_1722_talker_send_packets(streaming chanend c_eth_tx_hp,
-                                        avb_1722_talker_state_t &st,
-                                        ptp_time_info_mod64 &timeInfo,
-                                        audio_double_buffer_t &sample_buffer)
-{
-  volatile audio_double_buffer_t *unsafe p_buffer =  (audio_double_buffer_t *unsafe) &sample_buffer;
+                                         avb_1722_talker_state_t &st,
+                                         ptp_time_info_mod64 &timeInfo,
+                                         audio_double_buffer_t &sample_buffer) {
+  volatile audio_double_buffer_t *unsafe p_buffer =
+      (audio_double_buffer_t * unsafe) & sample_buffer;
   if (!p_buffer->data_ready) {
     return;
   }
 
   unsigned rd_buf = !p_buffer->active_buffer;
-  audio_frame_t * unsafe frame = (audio_frame_t *)&p_buffer->buffer[rd_buf];
+  audio_frame_t *unsafe frame = (audio_frame_t *)&p_buffer->buffer[rd_buf];
 
   if (st.max_active_avb_stream != -1) {
-    for (int i=0; i < (st.max_active_avb_stream+1); i++) {
-      if (st.talker_streams[i].active==2) { // TODO: Replace int with enum
-        int packet_size = avb1722_create_packet((st.tx_buf[i], unsigned char[]),
-                                                st.talker_streams[i],
-                                                timeInfo,
-                                                frame, i);
-        if (!st.tx_buf_fill_size[i]) st.tx_buf_fill_size[i] = packet_size;
+    for (int i = 0; i < (st.max_active_avb_stream + 1); i++) {
+      if (st.talker_streams[i].active == 2) { // TODO: Replace int with enum
+          int packet_size = avb1722_create_packet((st.tx_buf[i], uint8_t[]), st.talker_streams[i],
+                                                  timeInfo, frame, i);
+          if (!st.tx_buf_fill_size[i])
+              st.tx_buf_fill_size[i] = packet_size;
       }
       if (i == st.max_active_avb_stream) {
-        p_buffer->data_ready = 0;
+          p_buffer->data_ready = 0;
       }
     }
 
-    for (int i=0; i < (st.max_active_avb_stream+1); i++) {
+    for (int i = 0; i < (st.max_active_avb_stream + 1); i++) {
       int packet_size = st.tx_buf_fill_size[i];
       if (packet_size) {
-        ethernet_send_hp_packet(c_eth_tx_hp, &(st.tx_buf[i], unsigned char[])[2], packet_size, ETHERNET_ALL_INTERFACES);
-        st.tx_buf_fill_size[i] = 0;
-        st.counters.sent_1722++;
-        break;
+          ethernet_send_hp_packet(c_eth_tx_hp, &(st.tx_buf[i], uint8_t[])[2], packet_size,
+                                  ETHERNET_ALL_INTERFACES);
+          st.tx_buf_fill_size[i] = 0;
+          st.counters.sent_1722++;
+          break;
       }
     }
   }
@@ -267,42 +263,38 @@ void avb_1722_talker(chanend c_ptp,
   ptp_get_requested_time_info_mod64(c_ptp, timeInfo);
 
   tmr :> t;
-  t+=TIMEINFO_UPDATE_INTERVAL;
+  t += TIMEINFO_UPDATE_INTERVAL;
 
   unsafe {
     buffer_handle_t h = audio_input_buf.get_handle();
 
     audio_double_buffer_t *unsafe sample_buffer = ((struct input_finfo *)h)->p_buffer;
 
-    while (1)
-    {
-      select
-      {
+    while (1) {
+      select {
           // Process commands from the AVB control/application thread
-        case avb_1722_talker_handle_cmd(c_talker_ctl, st): break;
+      case avb_1722_talker_handle_cmd(c_talker_ctl, st):
+          break;
 
           // Periodically ask the PTP server for new time information
         case tmr when timerafter(t) :> t:
-          if (!pending_timeinfo) {
-            ptp_request_time_info_mod64(c_ptp);
-            pending_timeinfo = 1;
-          }
-          t+=TIMEINFO_UPDATE_INTERVAL;
-          break;
+            if (!pending_timeinfo) {
+                ptp_request_time_info_mod64(c_ptp);
+                pending_timeinfo = 1;
+            }
+            t += TIMEINFO_UPDATE_INTERVAL;
+            break;
 
-          // The PTP server has sent new time information
+            // The PTP server has sent new time information
         case ptp_get_requested_time_info_mod64(c_ptp, timeInfo):
-          pending_timeinfo = 0;
-          break;
+            pending_timeinfo = 0;
+            break;
 
-
-          // Call the 1722 packet construction
+            // Call the 1722 packet construction
         default:
-          unsafe {
-            avb_1722_talker_send_packets(c_eth_tx_hp, st, timeInfo, *sample_buffer);
-          }
-          break;
-      }
+            unsafe { avb_1722_talker_send_packets(c_eth_tx_hp, st, timeInfo, *sample_buffer); }
+            break;
+        }
     }
   }
 }

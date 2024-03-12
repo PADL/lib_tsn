@@ -1,0 +1,6 @@
+BasedOnStyle: LLVM
+SortIncludes: false
+BinPackParameters: false
+IndentWidth: 4
+AlignConsecutiveMacros: true
+ColumnLimit: 100

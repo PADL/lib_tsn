@@ -1,6 +1,7 @@
 // Copyright (c) 2011-2017, XMOS Ltd, All rights reserved
-#ifndef AVB_1722_1_ACMP_H_
-#define AVB_1722_1_ACMP_H_
+#pragma once
+
+#include <inttypes.h>
 
 #include "avb.h"
 #include <xccompat.h>
@@ -10,34 +11,34 @@
 #define AVB_1722_1_ACMP_DEST_MAC {0x91, 0xe0, 0xf0, 0x01, 0x00, 0x00};
 
 enum acmp_controller_state_t {
-        ACMP_CONTROLLER_IDLE,
-        ACMP_CONTROLLER_WAITING,
-        ACMP_CONTROLLER_TIMEOUT,
-        ACMP_CONTROLLER_CONNECT_RX_RESPONSE,
-        ACMP_CONTROLLER_DISCONNECT_RX_RESPONSE,
-        ACMP_CONTROLLER_GET_TX_STATE_RESPONSE,
-        ACMP_CONTROLLER_GET_RX_STATE_RESPONSE,
-        ACMP_CONTROLLER_GET_TX_CONNECTION_RESPONSE
+    ACMP_CONTROLLER_IDLE,
+    ACMP_CONTROLLER_WAITING,
+    ACMP_CONTROLLER_TIMEOUT,
+    ACMP_CONTROLLER_CONNECT_RX_RESPONSE,
+    ACMP_CONTROLLER_DISCONNECT_RX_RESPONSE,
+    ACMP_CONTROLLER_GET_TX_STATE_RESPONSE,
+    ACMP_CONTROLLER_GET_RX_STATE_RESPONSE,
+    ACMP_CONTROLLER_GET_TX_CONNECTION_RESPONSE
 };
 
 enum acmp_talker_state_t {
-        ACMP_TALKER_IDLE,
-        ACMP_TALKER_WAITING,
-        ACMP_TALKER_CONNECT,
-        ACMP_TALKER_DISCONNECT,
-        ACMP_TALKER_GET_STATE,
-        ACMP_TALKER_GET_CONNECTION
+    ACMP_TALKER_IDLE,
+    ACMP_TALKER_WAITING,
+    ACMP_TALKER_CONNECT,
+    ACMP_TALKER_DISCONNECT,
+    ACMP_TALKER_GET_STATE,
+    ACMP_TALKER_GET_CONNECTION
 };
 
 enum acmp_listener_state_t {
-        ACMP_LISTENER_IDLE,
-        ACMP_LISTENER_WAITING,
-        ACMP_LISTENER_CONNECT_RX_COMMAND,
-        ACMP_LISTENER_DISCONNECT_RX_COMMAND,
-        ACMP_LISTENER_CONNECT_TX_RESPONSE,
-        ACMP_LISTENER_DISCONNECT_TX_RESPONSE,
-        ACMP_LISTENER_GET_STATE,
-        ACMP_LISTENER_RX_TIMEOUT
+    ACMP_LISTENER_IDLE,
+    ACMP_LISTENER_WAITING,
+    ACMP_LISTENER_CONNECT_RX_COMMAND,
+    ACMP_LISTENER_DISCONNECT_RX_COMMAND,
+    ACMP_LISTENER_CONNECT_TX_RESPONSE,
+    ACMP_LISTENER_DISCONNECT_TX_RESPONSE,
+    ACMP_LISTENER_GET_STATE,
+    ACMP_LISTENER_RX_TIMEOUT
 };
 
 void avb_1722_1_acmp_controller_init();
@@ -46,23 +47,27 @@ void avb_1722_1_acmp_talker_init();
 void avb_1722_1_acmp_listener_init();
 
 #ifdef __XC__
-void avb_1722_1_acmp_controller_periodic(client interface ethernet_tx_if i_eth, client interface avb_interface avb);
-void avb_1722_1_acmp_talker_periodic(client interface ethernet_tx_if i_eth, client interface avb_interface avb);
-void avb_1722_1_acmp_listener_periodic(client interface ethernet_tx_if i_eth, client interface avb_interface avb);
+void avb_1722_1_acmp_controller_periodic(client interface ethernet_tx_if i_eth,
+                                         client interface avb_interface avb);
+void avb_1722_1_acmp_talker_periodic(client interface ethernet_tx_if i_eth,
+                                     client interface avb_interface avb);
+void avb_1722_1_acmp_listener_periodic(client interface ethernet_tx_if i_eth,
+                                       client interface avb_interface avb);
 #endif
 
 /** Setup a new stream connection between a Talker and Listener entity.
  *
- *  The Controller shall send a CONNECT_RX_COMMAND to the Listener Entity. The Listener Entity shall then send a
- *  CONNECT_TX_COMMAND to the Talker Entity.
+ *  The Controller shall send a CONNECT_RX_COMMAND to the Listener Entity. The
+ *Listener Entity shall then send a CONNECT_TX_COMMAND to the Talker Entity.
  *
  *  \param talker_guid      the GUID of the Talker being targeted by the command
- *  \param listener_guid    the GUID of the Listener being targeted by the command
- *  \param talker_id        the unique id of the Talker stream source to connect.
- *                          For entities using AEM, this corresponds to the id of the STREAM_OUTPUT descriptor
- *  \param listener_id      the unique id of the Listener stream source to connect.
- *                          For entities using AEM, this corresponds to the id of the STREAM_INPUT descriptor
- *  \param c_tx             a transmit chanend to the Ethernet server
+ *  \param listener_guid    the GUID of the Listener being targeted by the
+ *command \param talker_id        the unique id of the Talker stream source to
+ *connect. For entities using AEM, this corresponds to the id of the
+ *STREAM_OUTPUT descriptor \param listener_id      the unique id of the Listener
+ *stream source to connect. For entities using AEM, this corresponds to the id
+ *of the STREAM_INPUT descriptor \param c_tx             a transmit chanend to
+ *the Ethernet server
  *
  **/
 void avb_1722_1_controller_connect(const_guid_ref_t talker_guid,
@@ -71,18 +76,21 @@ void avb_1722_1_controller_connect(const_guid_ref_t talker_guid,
                                    int listener_id,
                                    CLIENT_INTERFACE(ethernet_tx_if, i_eth));
 
-/** Disconnect an existing stream connection between a Talker and Listener entity.
+/** Disconnect an existing stream connection between a Talker and Listener
+ *entity.
  *
- *  The Controller shall send a DISCONNECT_RX_COMMAND to the Listener Entity. The Listener Entity shall then send a
- *  DISCONNECT_TX_COMMAND to the Talker Entity.
+ *  The Controller shall send a DISCONNECT_RX_COMMAND to the Listener Entity.
+ *The Listener Entity shall then send a DISCONNECT_TX_COMMAND to the Talker
+ *Entity.
  *
  *  \param talker_guid      the GUID of the Talker being targeted by the command
- *  \param listener_guid    the GUID of the Listener being targeted by the command
- *  \param talker_id        the unique id of the Talker stream source to disconnect.
- *                          For entities using AEM, this corresponds to the id of the STREAM_OUTPUT descriptor
- *  \param listener_id      the unique id of the Listener stream source to disconnect.
- *                          For entities using AEM, this corresponds to the id of the STREAM_INPUT descriptor
- *  \param c_tx             a transmit chanend to the Ethernet server
+ *  \param listener_guid    the GUID of the Listener being targeted by the
+ *command \param talker_id        the unique id of the Talker stream source to
+ *disconnect. For entities using AEM, this corresponds to the id of the
+ *STREAM_OUTPUT descriptor \param listener_id      the unique id of the Listener
+ *stream source to disconnect. For entities using AEM, this corresponds to the
+ *id of the STREAM_INPUT descriptor \param c_tx             a transmit chanend
+ *to the Ethernet server
  *
  **/
 void avb_1722_1_controller_disconnect(const_guid_ref_t talker_guid,
@@ -91,47 +99,55 @@ void avb_1722_1_controller_disconnect(const_guid_ref_t talker_guid,
                                       int listener_id,
                                       CLIENT_INTERFACE(ethernet_tx_if, i_eth));
 
-/** Disconnect all Listener sinks currently connected to the Talker stream source with ``talker_id``
+/** Disconnect all Listener sinks currently connected to the Talker stream
+ *source with ``talker_id``
  *
  *
- *  \param talker_id        the unique id of the Talker stream source to disconnect its listeners.
- *                          For entities using AEM, this corresponds to the id of the STREAM_OUTPUT descriptor
- *  \param c_tx             a transmit chanend to the Ethernet server
- *
- **/
-void avb_1722_1_controller_disconnect_all_listeners(int talker_id, CLIENT_INTERFACE(ethernet_tx_if, i_eth));
-
-
-/** Disconnect the Talker source currently connected to the Listener stream sink with ``listener_id``
- *
- *
- *  \param listener_id      the unique id of the Listener stream source to disconnect its Talker.
- *                          For entities using AEM, this corresponds to the id of the STREAM_INPUT descriptor
- *  \param c_tx             a transmit chanend to the Ethernet server
+ *  \param talker_id        the unique id of the Talker stream source to
+ *disconnect its listeners. For entities using AEM, this corresponds to the id
+ *of the STREAM_OUTPUT descriptor \param c_tx             a transmit chanend to
+ *the Ethernet server
  *
  **/
-void avb_1722_1_controller_disconnect_talker(int listener_id, CLIENT_INTERFACE(ethernet_tx_if, i_eth));
+void avb_1722_1_controller_disconnect_all_listeners(int talker_id,
+                                                    CLIENT_INTERFACE(ethernet_tx_if, i_eth));
+
+/** Disconnect the Talker source currently connected to the Listener stream sink
+ *with ``listener_id``
+ *
+ *
+ *  \param listener_id      the unique id of the Listener stream source to
+ *disconnect its Talker. For entities using AEM, this corresponds to the id of
+ *the STREAM_INPUT descriptor \param c_tx             a transmit chanend to the
+ *Ethernet server
+ *
+ **/
+void avb_1722_1_controller_disconnect_talker(int listener_id,
+                                             CLIENT_INTERFACE(ethernet_tx_if, i_eth));
 
 /**
  *
- * Return information that is required for processing the AVB_1722_1_CONNECT_TALKER and
- * AVB_1722_1_DISCONNECT_TALKER notifications.
+ * Return information that is required for processing the
+ * AVB_1722_1_CONNECT_TALKER and AVB_1722_1_DISCONNECT_TALKER notifications.
  */
-unsigned avb_1722_1_acmp_get_talker_connection_info(REFERENCE_PARAM(short,talker));
+unsigned avb_1722_1_acmp_get_talker_connection_info(REFERENCE_PARAM(short, talker));
 
 /**
  *
- * Return information that is required for processing the AVB_1722_1_CONNECT_LISTENER and
- * AVB_1722_1_DISCONNECT_LISTENER notifications.
+ * Return information that is required for processing the
+ * AVB_1722_1_CONNECT_LISTENER and AVB_1722_1_DISCONNECT_LISTENER notifications.
  */
-unsigned avb_1722_1_acmp_get_listener_connection_info(REFERENCE_PARAM(short,listener), unsigned char address[6], unsigned streamId[2], REFERENCE_PARAM(unsigned,vlan));
+unsigned avb_1722_1_acmp_get_listener_connection_info(REFERENCE_PARAM(short, listener),
+                                                      uint8_t address[6],
+                                                      unsigned streamId[2],
+                                                      REFERENCE_PARAM(unsigned, vlan));
 
 /**
  *
  *  Called by the application to inform 1722.1 of the source MAC
  *  address for the particular talker.
  */
-void avb_1722_1_talker_set_mac_address(unsigned talker_unique_id, unsigned char macaddr[]);
+void avb_1722_1_talker_set_mac_address(unsigned talker_unique_id, uint8_t macaddr[]);
 
 /**
  *
@@ -162,33 +178,48 @@ void acmp_remove_talker_stream_info(void);
 
 unsigned acmp_talker_valid_talker_unique(void);
 
-void acmp_send_command(int entity_type, int message_type, avb_1722_1_acmp_cmd_resp *alias command, int retry, int inflight_idx, CLIENT_INTERFACE(ethernet_tx_if, i_eth));
-void acmp_send_response(int message_type, avb_1722_1_acmp_cmd_resp *alias response, int status, CLIENT_INTERFACE(ethernet_tx_if, i_eth));
+void acmp_send_command(int entity_type,
+                       int message_type,
+                       avb_1722_1_acmp_cmd_resp *alias command,
+                       int retry,
+                       int inflight_idx,
+                       CLIENT_INTERFACE(ethernet_tx_if, i_eth));
+void acmp_send_response(int message_type,
+                        avb_1722_1_acmp_cmd_resp *alias response,
+                        int status,
+                        CLIENT_INTERFACE(ethernet_tx_if, i_eth));
 
 #ifdef __XC__
 extern "C" {
 #endif
 void avb_1722_1_create_acmp_packet(avb_1722_1_acmp_cmd_resp *cr, int message_type, int status);
-void process_avb_1722_1_acmp_packet(avb_1722_1_acmp_packet_t *pkt, CLIENT_INTERFACE(ethernet_tx_if, i_eth));
+void process_avb_1722_1_acmp_packet(avb_1722_1_acmp_packet_t *pkt,
+                                    CLIENT_INTERFACE(ethernet_tx_if, i_eth));
 avb_1722_1_acmp_inflight_command *acmp_remove_inflight(int entity_type);
 #ifdef __XC__
 }
 #endif
 void acmp_set_inflight_retry(int entity_type, unsigned int message_type, int inflight_idx);
 
-void acmp_add_inflight(int entity_type, unsigned int message_type, unsigned short original_sequence_id);
+void acmp_add_inflight(int entity_type, unsigned int message_type, uint16_t original_sequence_id);
 
-void acmp_controller_connect_disconnect(int message_type, const_guid_ref_t talker_guid, const_guid_ref_t listener_guid, int talker_id, int listener_id, CLIENT_INTERFACE(ethernet_tx_if, i_eth));
+void acmp_controller_connect_disconnect(int message_type,
+                                        const_guid_ref_t talker_guid,
+                                        const_guid_ref_t listener_guid,
+                                        int talker_id,
+                                        int listener_id,
+                                        CLIENT_INTERFACE(ethernet_tx_if, i_eth));
 
 void acmp_start_fast_connect(CLIENT_INTERFACE(ethernet_tx_if, i_eth));
 
 #ifdef __XC__
 extern "C" {
 #endif
-    void acmp_listener_store_fast_connect_info(int unique_id, guid_t *controller_guid, guid_t *talker_guid, unsigned short talker_unique_id);
-    void acmp_listener_erase_fast_connect_info(int unique_id);
+void acmp_listener_store_fast_connect_info(int unique_id,
+                                           guid_t *controller_guid,
+                                           guid_t *talker_guid,
+                                           uint16_t talker_unique_id);
+void acmp_listener_erase_fast_connect_info(int unique_id);
 #ifdef __XC__
 }
 #endif
-
-#endif /* AVB_17221_ACMP_H_ */

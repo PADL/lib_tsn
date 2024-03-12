@@ -13,50 +13,54 @@
 #endif
 
 #ifndef AUDIO_OUTPUT_FIFO_WORD_SIZE
-#define AUDIO_OUTPUT_FIFO_WORD_SIZE (AVB_MAX_AUDIO_SAMPLE_RATE/450)
+#define AUDIO_OUTPUT_FIFO_WORD_SIZE (AVB_MAX_AUDIO_SAMPLE_RATE / 450)
 #endif
 
-#define START_OF_FIFO(s) ((unsigned int*)&((s)->fifo[0]))
-#define END_OF_FIFO(s)   ((unsigned int*)&((s)->fifo[AUDIO_OUTPUT_FIFO_WORD_SIZE]))
+#define START_OF_FIFO(s) ((unsigned int *)&((s)->fifo[0]))
+#define END_OF_FIFO(s)   ((unsigned int *)&((s)->fifo[AUDIO_OUTPUT_FIFO_WORD_SIZE]))
 
 typedef enum ofifo_state_t {
-  DISABLED, //!< Not active
-  ZEROING,  //!< pushing zeros through to fill
-  LOCKING,  //!< Clock recovery trying to lock to the sample stream
-  LOCKED    //!< Clock recovery is locked and working
+    DISABLED, //!< Not active
+    ZEROING,  //!< pushing zeros through to fill
+    LOCKING,  //!< Clock recovery trying to lock to the sample stream
+    LOCKED    //!< Clock recovery is locked and working
 } ofifo_state_t;
 
-
 struct audio_output_fifo_data_t {
-  int zero_flag;							//!< When set, the FIFO will output zero samples instead of its contents
-  uintptr_t dptr;						//!< The read pointer
-  uintptr_t wrptr;						//!< The write pointer
-  uintptr_t marker;						//!< This indicates which sample is the one which the timestamps apply to
-  int local_ts;								//!< When a marked sample has played out, this contains the ref clock when it happened.
-  int ptp_ts;								//!< Contains the PTP timestamp of the marked sample.
-  unsigned int sample_count;				//!< The count of samples that have passed through the buffer.
-  unsigned int zero_marker;					//!<
-  ofifo_state_t state;						//!< State of the FIFO
-  int last_notification_time;				//!< Last time that the clock recovery thread was informed of the timestamp info
-  int media_clock;							//!<
-  int pending_init_notification;			//!<
-  unsigned int fifo[AUDIO_OUTPUT_FIFO_WORD_SIZE];
+    int zero_flag;                 //!< When set, the FIFO will output zero samples instead of
+                                   //!< its contents
+    uintptr_t dptr;                //!< The read pointer
+    uintptr_t wrptr;               //!< The write pointer
+    uintptr_t marker;              //!< This indicates which sample is the one which the
+                                   //!< timestamps apply to
+    int local_ts;                  //!< When a marked sample has played out, this contains the
+                                   //!< ref clock when it happened.
+    int ptp_ts;                    //!< Contains the PTP timestamp of the marked sample.
+    unsigned int sample_count;     //!< The count of samples that have passed
+                                   //!< through the buffer.
+    unsigned int zero_marker;      //!<
+    ofifo_state_t state;           //!< State of the FIFO
+    int last_notification_time;    //!< Last time that the clock recovery thread
+                                   //!< was informed of the timestamp info
+    int media_clock;               //!<
+    int pending_init_notification; //!<
+    unsigned int fifo[AUDIO_OUTPUT_FIFO_WORD_SIZE];
 };
 
 typedef struct ofifo_t {
-  int zero_flag;
-  unsigned int *unsafe dptr;
-  unsigned int *unsafe wrptr;
-  unsigned int *unsafe marker;
-  int local_ts;
-  int ptp_ts;
-  unsigned int sample_count;
-  unsigned int *unsafe zero_marker;
-  ofifo_state_t state;
-  int last_notification_time;
-  int media_clock;
-  int pending_init_notification;
-  unsigned int fifo[AUDIO_OUTPUT_FIFO_WORD_SIZE];
+    int zero_flag;
+    unsigned int *unsafe dptr;
+    unsigned int *unsafe wrptr;
+    unsigned int *unsafe marker;
+    int local_ts;
+    int ptp_ts;
+    unsigned int sample_count;
+    unsigned int *unsafe zero_marker;
+    ofifo_state_t state;
+    int last_notification_time;
+    int media_clock;
+    int pending_init_notification;
+    unsigned int fifo[AUDIO_OUTPUT_FIFO_WORD_SIZE];
 } ofifo_t;
 
 /**
@@ -81,9 +85,7 @@ void disable_audio_output_fifo(buffer_handle_t s, unsigned index);
  *
  * This starts samples flowing through the FIFO
  */
-void enable_audio_output_fifo(buffer_handle_t s,
-                              unsigned index,
-                              int media_clock);
+void enable_audio_output_fifo(buffer_handle_t s, unsigned index, int media_clock);
 
 /**
  *  \brief Perform maintanance on the FIFO, called periodically
@@ -95,14 +97,13 @@ void enable_audio_output_fifo(buffer_handle_t s,
  *  \param s handle to FIFO buffers
  *  \param index which buffer to operate on
  *  \param buf_ctl a channel end that links the FIFO to the media clock service
- *  \param notified_buf_ctl pointer to a flag which is set when the media clock has been notified of a timing event in the FIFO
+ *  \param notified_buf_ctl pointer to a flag which is set when the media clock
+ * has been notified of a timing event in the FIFO
  */
-void
-audio_output_fifo_maintain(buffer_handle_t s,
-                           unsigned index,
-                           chanend buf_ctl,
-                           REFERENCE_PARAM(int, notified_buf_ctl));
-
+void audio_output_fifo_maintain(buffer_handle_t s,
+                                unsigned index,
+                                chanend buf_ctl,
+                                REFERENCE_PARAM(int, notified_buf_ctl));
 
 #ifndef __XC__
 
@@ -121,17 +122,15 @@ audio_output_fifo_maintain(buffer_handle_t s,
  *  \param stride the number of words between successive samples for this FIFO
  *  \param n the number of samples to push into the buffer
  */
-void
-audio_output_fifo_strided_push(buffer_handle_t s0,
-                               size_t index,
-                               uint8_t *sample_ptr,
-                               size_t sample_size,
-                               size_t stride,
-                               size_t n,
-                               uint8_t subtype,
-                               uint32_t valid_mask);
+void audio_output_fifo_strided_push(buffer_handle_t s0,
+                                    size_t index,
+                                    uint8_t *sample_ptr,
+                                    size_t sample_size,
+                                    size_t stride,
+                                    size_t n,
+                                    uint8_t subtype,
+                                    uint32_t valid_mask);
 #endif
-
 
 /**
  *  \brief Used by the audio output system to pull the next sample from the FIFO
@@ -144,54 +143,51 @@ audio_output_fifo_strided_push(buffer_handle_t s0,
  *  \param index which buffer to operate on
  *  \param timestamp the ref clock time of the sample playout
  */
- /*
+/*
 unsigned int
 audio_output_fifo_pull_sample(buffer_handle_t s0,
-                              unsigned index,
-                              unsigned int timestamp);
+                             unsigned index,
+                             unsigned int timestamp);
 */
-__attribute__((always_inline))
-unsafe static inline unsigned int
+__attribute__((always_inline)) unsafe static inline unsigned int
 audio_output_fifo_pull_sample(buffer_handle_t s0,
                               unsigned index,
                               unsigned int timestamp,
-                              REFERENCE_PARAM(unsigned int, valid))
-{
-  ofifo_t *unsafe s = (ofifo_t *unsafe)((struct output_finfo *unsafe)s0)->p_buffer[index];
-  unsigned int sample;
-  unsigned int *unsafe dptr = s->dptr;
+                              REFERENCE_PARAM(unsigned int, valid)) {
+    ofifo_t *unsafe s = (ofifo_t * unsafe)((struct output_finfo * unsafe) s0)->p_buffer[index];
+    unsigned int sample;
+    unsigned int *unsafe dptr = s->dptr;
 
 #ifdef __XC__
-  valid = (dptr != s->wrptr);
+    valid = (dptr != s->wrptr);
 #else
-  *valid = (dptr != s->wrptr);
+    *valid = (dptr != s->wrptr);
 #endif
 
-  if (dptr == s->wrptr) {
-    // Underflow
-    // debug_printf("Media output FIFO underflow\n");
-    return 0;
-  }
+    if (dptr == s->wrptr) {
+        // Underflow
+        // debug_printf("Media output FIFO underflow\n");
+        return 0;
+    }
 
-  sample = *dptr;
-  if (dptr == s->marker && s->local_ts == 0) {
-    if (timestamp == 0)
-        timestamp=1;
-    s->local_ts = timestamp;
-  }
-  dptr++;
-  if (dptr == END_OF_FIFO(s)) {
-    dptr = START_OF_FIFO(s);
-  }
+    sample = *dptr;
+    if (dptr == s->marker && s->local_ts == 0) {
+        if (timestamp == 0)
+            timestamp = 1;
+        s->local_ts = timestamp;
+    }
+    dptr++;
+    if (dptr == END_OF_FIFO(s)) {
+        dptr = START_OF_FIFO(s);
+    }
 
-  s->dptr = dptr;
+    s->dptr = dptr;
 
-  if (s->zero_flag)
-    sample = 0;
+    if (s->zero_flag)
+        sample = 0;
 
-  return sample;
+    return sample;
 }
-
 
 /**
  *  \brief Set the PTP timestamp on a specific sample in the buffer
@@ -208,14 +204,14 @@ audio_output_fifo_pull_sample(buffer_handle_t s0,
  *  \param s0 handle to FIFO buffers
  *  \param index which buffer to operate on
  *  \param timestamp the 32 bit PTP timestamp
- *  \param sample_number the sample, counted from the end of the FIFO, which the timestamp applies to
+ *  \param sample_number the sample, counted from the end of the FIFO, which the
+ * timestamp applies to
  *
  */
 void audio_output_fifo_set_ptp_timestamp(buffer_handle_t s0,
                                          unsigned index,
                                          unsigned int timestamp,
                                          unsigned sample_number);
-
 
 /**
  *  \brief Handle notification events on the buffer control channel
@@ -229,16 +225,15 @@ void audio_output_fifo_set_ptp_timestamp(buffer_handle_t s0,
  *  \param s0 handle to FIFO buffers
  *  \param index which buffer to operate on
  *  \param stream_num  the number of the stream which is being handled
- *  \param buf_ctl_notified pointer to the flag which indicates whether the clock recovery thread has been notified of a timing event
+ *  \param buf_ctl_notified pointer to the flag which indicates whether the
+ * clock recovery thread has been notified of a timing event
  */
-void
-audio_output_fifo_handle_buf_ctl(chanend buf_ctl,
-                                 buffer_handle_t s0,
-                                 unsigned index,
-                                 REFERENCE_PARAM(int, buf_ctl_notified),
-                                 timer tmr);
+void audio_output_fifo_handle_buf_ctl(chanend buf_ctl,
+                                      buffer_handle_t s0,
+                                      unsigned index,
+                                      REFERENCE_PARAM(int, buf_ctl_notified),
+                                      timer tmr);
 
-ofifo_state_t
-audio_output_fifo_get_state(buffer_handle_t s0, unsigned index);
+ofifo_state_t audio_output_fifo_get_state(buffer_handle_t s0, unsigned index);
 
 #endif

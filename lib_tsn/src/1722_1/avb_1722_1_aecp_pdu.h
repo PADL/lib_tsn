@@ -1,6 +1,6 @@
 // Copyright (c) 2011-2017, XMOS Ltd, All rights reserved
-#ifndef AVB_1722_1_AECPDU_H_
-#define AVB_1722_1_AECPDU_H_
+
+#pragma once
 
 #include <inttypes.h>
 
@@ -8,17 +8,20 @@
 #include "avb_1722_1_default_conf.h"
 #include "avb_1722_1_aecp_aem.h"
 
-#define AEM_MSG_GET_U_FLAG(pkt)         ((pkt)->uflag_command_type >> 7)
-#define AEM_MSG_SET_U_FLAG(pkt, uflag)  ((pkt)->uflag_command_type = ((pkt)->uflag_command_type & 0x7f) | (((uflag) << 7) & 0x80))
-#define AEM_MSG_GET_COMMAND_TYPE(pkt)   ((((pkt)->uflag_command_type & 0x7f) << 8)| \
-                                        ((pkt)->command_type))
+#define AEM_MSG_GET_U_FLAG(pkt) ((pkt)->uflag_command_type >> 7)
+#define AEM_MSG_SET_U_FLAG(pkt, uflag)                                                             \
+    ((pkt)->uflag_command_type = ((pkt)->uflag_command_type & 0x7f) | (((uflag) << 7) & 0x80))
+#define AEM_MSG_GET_COMMAND_TYPE(pkt)                                                              \
+    ((((pkt)->uflag_command_type & 0x7f) << 8) | ((pkt)->command_type))
 
-#define AEM_MSG_SET_COMMAND_TYPE(pkt, type) do{ (pkt)->uflag_command_type = ((pkt)->uflag_command_type & 0x80) | (((type) >> 8) & 0x7f); \
-                                                (pkt)->command_type = ((type) & 0xFF); } while (0)
+#define AEM_MSG_SET_COMMAND_TYPE(pkt, type)                                                        \
+    do {                                                                                           \
+        (pkt)->uflag_command_type = ((pkt)->uflag_command_type & 0x80) | (((type) >> 8) & 0x7f);   \
+        (pkt)->command_type = ((type)&0xFF);                                                       \
+    } while (0)
 
-#define ADDRESS_MSG_GET_MODE(aa)       (((aa)->mode_length[0] >> 4) & 0xF)
-#define ADDRESS_MSG_GET_LENGTH(aa)     ((((aa)->mode_length[0] & 0xf) << 8)| \
-                                        ((aa)->mode_length[1]))
+#define ADDRESS_MSG_GET_MODE(aa)   (((aa)->mode_length[0] >> 4) & 0xF)
+#define ADDRESS_MSG_GET_LENGTH(aa) ((((aa)->mode_length[0] & 0xf) << 8) | ((aa)->mode_length[1]))
 
 /**
  * 1722.1 AECP AEM command format
@@ -46,7 +49,7 @@ typedef struct {
     uint8_t tlv_count[2];
     uint8_t mode_length[2];
     uint8_t address[8];
-    uint8_t data[514-8-2-2];
+    uint8_t data[514 - 8 - 2 - 2];
 } avb_1722_1_aecp_address_access_t;
 
 /**
@@ -84,7 +87,7 @@ typedef struct {
     } data;
 } avb_1722_1_aecp_packet_t;
 
-#define AVB_1722_1_AECP_PAYLOAD_OFFSET (sizeof(avb_1722_1_packet_header_t) + 18)
+#define AVB_1722_1_AECP_PAYLOAD_OFFSET      (sizeof(avb_1722_1_packet_header_t) + 18)
 #define AVB_1722_1_AECP_COMMAND_DATA_OFFSET (12)
 
 typedef enum {
@@ -121,6 +124,3 @@ typedef enum {
     AECP_STATUS_SUCCESS = 0,
     AECP_STATUS_NOT_IMPLEMENTED = 1
 } avb_1722_1_aecp_status_type;
-
-
-#endif /* AVB_1722_1_AECPDU_H_ */

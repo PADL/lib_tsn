@@ -28,12 +28,12 @@ void avb_1722_maap_request_addresses(int num_addresses, char (&?start_address)[]
 void avb_1722_maap_request_addresses(int num_addresses, char start_address[]);
 #endif
 
-void avb_1722_maap_init(unsigned char macaddr[6]);
+void avb_1722_maap_init(uint8_t macaddr[6]);
 
 #ifdef __XC__
-void avb_1722_maap_process_packet(unsigned char buf[nbytes], unsigned int nbytes, unsigned char src_addr[6], client interface ethernet_tx_if i_eth);
+void avb_1722_maap_process_packet(uint8_t buf[nbytes], unsigned int nbytes, uint8_t src_addr[6], client interface ethernet_tx_if i_eth);
 #else
-void avb_1722_maap_process_packet(unsigned char buf[], unsigned int nbytes, unsigned char src_addr[6], CLIENT_INTERFACE(ethernet_tx_if, i_eth));
+void avb_1722_maap_process_packet(uint8_t buf[], unsigned int nbytes, uint8_t src_addr[6], CLIENT_INTERFACE(ethernet_tx_if, i_eth));
 #endif
 
 /** Relinquish the reserved MAAP address range
@@ -71,7 +71,7 @@ void avb_1722_maap_periodic(client interface ethernet_tx_if i_eth, client interf
  * \param source_num    The local source ID of the Talker
  * \param mac_addr      The destination MAC address reserved for this Talker
  */
-void avb_talker_on_source_address_reserved(client interface avb_interface i_avb, int source_num, unsigned char mac_addr[6]);
+void avb_talker_on_source_address_reserved(client interface avb_interface i_avb, int source_num, uint8_t mac_addr[6]);
 
 /** Default implementation of avb_talker_on_source_address_reserved()
  *
@@ -79,10 +79,10 @@ void avb_talker_on_source_address_reserved(client interface avb_interface i_avb,
  * \param source_num    The local source ID of the Talker
  * \param mac_addr      The destination MAC address reserved for this Talker
  */
-void avb_talker_on_source_address_reserved_default(client interface avb_interface i_avb, int source_num, unsigned char mac_addr[6]);
+void avb_talker_on_source_address_reserved_default(client interface avb_interface i_avb, int source_num, uint8_t mac_addr[6]);
 
 
-int avb_1722_maap_get_base_address(unsigned char addr[6]);
+int avb_1722_maap_get_base_address(uint8_t addr[6]);
 
 #endif
 

@@ -1,6 +1,6 @@
 // Copyright (c) 2011-2017, XMOS Ltd, All rights reserved
-#ifndef AVB_1722_1_COMMON_H_
-#define AVB_1722_1_COMMON_H_
+
+#pragma once
 
 #include <xclib.h>
 #include <inttypes.h>
@@ -22,10 +22,12 @@ int qlog2(unsigned n);
 #ifdef __XC__
 extern "C" {
 #endif
-void avb_1722_1_create_1722_1_header(const uint8_t *dest_addr, int subtype, int message_type, uint8_t valid_time_status, unsigned data_len, ethernet_hdr_t *hdr);
+void avb_1722_1_create_1722_1_header(const uint8_t *dest_addr,
+                                     int subtype,
+                                     int message_type,
+                                     uint8_t valid_time_status,
+                                     unsigned data_len,
+                                     ethernet_hdr_t *hdr);
 #ifdef __XC__
 }
 #endif
-
-
-#endif /* AVB_1722_1_COMMON_H_ */

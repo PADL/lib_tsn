@@ -30,12 +30,12 @@
    \param i_spi  client interface of type spi_interface into avb_srp_task()
  **/
 void avb_process_1722_control_packet(unsigned int buf[],
-                                    unsigned nbytes,
-                                    eth_packet_type_t packet_type,
-                                    client interface ethernet_tx_if i_eth,
-                                    client interface avb_interface i_avb,
-                                    client interface avb_1722_1_control_callbacks i_1722_1_entity,
-                                    chanend c_ptp);
+                                     unsigned nbytes,
+                                     eth_packet_type_t packet_type,
+                                     client interface ethernet_tx_if i_eth,
+                                     client interface avb_interface i_avb,
+                                     client interface avb_1722_1_control_callbacks i_1722_1_entity,
+                                     chanend c_ptp);
 
 /** Process an AVB SRP control packet.
 
@@ -52,10 +52,11 @@ void avb_process_1722_control_packet(unsigned int buf[],
 
  **/
 void avb_process_srp_control_packet(client interface avb_interface i_avb,
-                               unsigned int buf[], unsigned len,
-                               eth_packet_type_t packet_type,
-                               client interface ethernet_tx_if i_eth,
-                               unsigned int port_num);
+                                    unsigned int buf[],
+                                    unsigned len,
+                                    eth_packet_type_t packet_type,
+                                    client interface ethernet_tx_if i_eth,
+                                    unsigned int port_num);
 #endif
 
 /**
@@ -69,21 +70,17 @@ void avb_process_srp_control_packet(client interface avb_interface i_avb,
  *   inactive.
  *
  *   \param sink_num the stream number to apply the change to
- *   \param volumes a set of volume values in 2.30 signed fixed point linear format
- *   \param count the number of channels to set
+ *   \param volumes a set of volume values in 2.30 signed fixed point linear
+ * format \param count the number of channels to set
  *
  */
 void set_avb_source_volumes(unsigned sink_num, int volumes[], int count);
 
-int set_avb_source_port(unsigned source_num,
-                        int srcport);
+int set_avb_source_port(unsigned source_num, int srcport);
 
-int avb_register_listener_streams(chanend listener_ctl,
-                                   int num_streams);
+int avb_register_listener_streams(chanend listener_ctl, int num_streams);
 
-void avb_register_talker_streams(chanend listener_ctl,
-                                 int num_streams,
-                                 unsigned char mac_addr[6]);
+void avb_register_talker_streams(chanend listener_ctl, int num_streams, uint8_t mac_addr[6]);
 
 /** Utility function to get the index of a source stream based on its
  * pointer.  This is used by SRP, which stores a pointer to the stream

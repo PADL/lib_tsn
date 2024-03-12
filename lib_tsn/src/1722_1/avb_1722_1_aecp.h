@@ -1,7 +1,8 @@
 // Copyright (c) 2011-2017, XMOS Ltd, All rights reserved
-#ifndef AVB_1722_1_AECP_H_
-#define AVB_1722_1_AECP_H_
 
+#pragma once
+
+#include <inttypes.h>
 #include <xccompat.h>
 #include "xc2compat.h"
 #include "avb_1722_1.h"
@@ -12,11 +13,11 @@
 #include "ethernet.h"
 
 void avb_1722_1_aecp_aem_init(unsigned int serial_num);
-void avb_1722_1_aem_set_grandmaster_id(REFERENCE_PARAM(unsigned char, as_grandmaster_id));
+void avb_1722_1_aem_set_grandmaster_id(REFERENCE_PARAM(uint8_t, as_grandmaster_id));
 #ifdef __XC__
 extern "C" {
 #endif
-void process_avb_1722_1_aecp_packet(unsigned char src_addr[6],
+void process_avb_1722_1_aecp_packet(uint8_t src_addr[MACADDR_NUM_BYTES],
                                     avb_1722_1_aecp_packet_t *pkt,
                                     int num_packet_bytes,
                                     CLIENT_INTERFACE(ethernet_tx_if, i_eth),
@@ -32,6 +33,6 @@ void begin_write_upgrade_image(void);
 
 void abort_write_upgrade_image(void);
 
-int avb_write_upgrade_image_page(int address, unsigned char data[FLASH_PAGE_SIZE], REFERENCE_PARAM(unsigned short, status));
-
-#endif /* AVB_1722_1_AECP_H_ */
+int avb_write_upgrade_image_page(int address,
+                                 uint8_t data[FLASH_PAGE_SIZE],
+                                 REFERENCE_PARAM(uint16_t, status));

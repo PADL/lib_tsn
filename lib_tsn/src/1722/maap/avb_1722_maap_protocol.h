@@ -24,15 +24,15 @@
 #define MAAP_DATA_LENGTH 16
 
 typedef struct maap_packet_t {
-  unsigned char cd_subtype;
-  unsigned char sv_avb_version_msg_type;
-  unsigned char maap_version_data_length_hi;
-  unsigned char data_length_lo;
-  unsigned char streamID[8];
-  unsigned char request_start_address[6];
-  unsigned char requested_count[2];
-  unsigned char conflict_start_address[6];
-  unsigned char conflict_count[2];
+  uint8_t cd_subtype;
+  uint8_t sv_avb_version_msg_type;
+  uint8_t maap_version_data_length_hi;
+  uint8_t data_length_lo;
+  uint8_t streamID[8];
+  uint8_t request_start_address[6];
+  uint8_t requested_count[2];
+  uint8_t conflict_start_address[6];
+  uint8_t conflict_count[2];
 } maap_packet_t;
 
 enum maap_message_type_t {
@@ -58,11 +58,6 @@ enum maap_message_type_t {
 
 #define GET_MAAP_REQUESTED_COUNT(pkt) ((pkt->requested_count[1] + (pkt->requested_count[0]<<8)))
 #define GET_MAAP_CONFLICT_COUNT(pkt) ((pkt->conflict_count[1] + (pkt->conflict_count[0]<<8)))
-
-#define SET_BITS(p, lo, hi, val) \
-  do { \
-    *(p) = (*(p) & (~(((1<<(hi-lo+1))-1)<<lo))) | ((val) << lo);        \
-  } while(0)
 
 #define SET_MAAP_CD_FLAG(pkt, val) SET_BITS(&pkt->cd_subtype, 7, 7, val)
 #define SET_MAAP_SUBTYPE(pkt, val) SET_BITS(&pkt->cd_subtype, 0, 6, val)

@@ -24,75 +24,75 @@
 
 #define MRP_NUM_PORTS (NUM_ETHERNET_MASTER_PORTS)
 
-
 #ifndef MRP_MAX_ATTRS
 #if MRP_NUM_PORTS == 1
 // There are 3 attributes per stream (talker_advertise, talker_failed
 // and listener). Therefore the number of attributes needed is:
-// (nTalkers * 3) + (nListeners * 3) + (nDomains=1) + AVB_MAX_NUM_VLAN + AVB_MAX_MMRP_GROUPS
-#define MRP_MAX_ATTRS ((3*(AVB_NUM_SOURCES)) + (3*(AVB_NUM_SINKS)) + 1 + (AVB_MAX_NUM_VLAN))
+// (nTalkers * 3) + (nListeners * 3) + (nDomains=1) + AVB_MAX_NUM_VLAN +
+// AVB_MAX_MMRP_GROUPS
+#define MRP_MAX_ATTRS ((3 * (AVB_NUM_SOURCES)) + (3 * (AVB_NUM_SINKS)) + 1 + (AVB_MAX_NUM_VLAN))
 #else
-#define MRP_MAX_ATTRS (12*4+4)
+#define MRP_MAX_ATTRS (12 * 4 + 4)
 #endif
 #endif
 
-#define MRP_DEBUG_ATTR_EGRESS 0
+#define MRP_DEBUG_ATTR_EGRESS  0
 #define MRP_DEBUG_ATTR_INGRESS 0
 
 #define MRP_DEBUG_STATE_CHANGE 0
 
-#define mrp_change_registrar_state(st, event, new) \
-       do { \
-          if (MRP_DEBUG_STATE_CHANGE) debug_print_registrar_state_change((st), (event), (new)); \
-         (st)->registrar_state = (new);        \
-       } while(0)
+#define mrp_change_registrar_state(st, event, new)                                                 \
+    do {                                                                                           \
+        if (MRP_DEBUG_STATE_CHANGE)                                                                \
+            debug_print_registrar_state_change((st), (event), (new));                              \
+        (st)->registrar_state = (new);                                                             \
+    } while (0)
 
-#define mrp_change_applicant_state(st, event, new) \
-       do { \
-          if (new == MRP_UNUSED) { \
-            if (srp_cleanup_reservation_entry((event), (st))) { \
-              if (MRP_DEBUG_STATE_CHANGE) debug_print_applicant_state_change((st), (event), (new)); \
-            } \
-          } \
-          else { \
-            if (MRP_DEBUG_STATE_CHANGE) debug_print_applicant_state_change((st), (event), (new)); \
-            (st)->applicant_state = (new); \
-          } \
-       } while(0)
+#define mrp_change_applicant_state(st, event, new)                                                 \
+    do {                                                                                           \
+        if (new == MRP_UNUSED) {                                                                   \
+            if (srp_cleanup_reservation_entry((event), (st))) {                                    \
+                if (MRP_DEBUG_STATE_CHANGE)                                                        \
+                    debug_print_applicant_state_change((st), (event), (new));                      \
+            }                                                                                      \
+        } else {                                                                                   \
+            if (MRP_DEBUG_STATE_CHANGE)                                                            \
+                debug_print_applicant_state_change((st), (event), (new));                          \
+            (st)->applicant_state = (new);                                                         \
+        }                                                                                          \
+    } while (0)
 
-#define mrp_change_event_state(st, event, new) \
-       do { \
-          if (MRP_DEBUG_STATE_CHANGE) debug_print_tx_event((st), (event)); \
-          (new) = (event);       \
-       } while(0)
+#define mrp_change_event_state(st, event, new)                                                     \
+    do {                                                                                           \
+        if (MRP_DEBUG_STATE_CHANGE)                                                                \
+            debug_print_tx_event((st), (event));                                                   \
+        (new) = (event);                                                                           \
+    } while (0)
 
 void debug_print_applicant_state_change(mrp_attribute_state *st, mrp_event event, int new);
 void debug_print_registrar_state_change(mrp_attribute_state *st, mrp_event event, int new);
 void debug_print_tx_event(mrp_attribute_state *st, mrp_attribute_event event);
 
-#define FIRST_VALUE_LENGTHS \
-  { sizeof(srp_talker_first_value),             \
-    sizeof(srp_talker_failed_first_value),\
-    sizeof(srp_listener_first_value),\
-    sizeof(srp_domain_first_value),\
-    sizeof(mmrp_mac_vector_first_value),\
-    sizeof(mvrp_vid_vector_first_value)\
-  }
+#define FIRST_VALUE_LENGTHS                                                                        \
+    {                                                                                              \
+        sizeof(srp_talker_first_value), sizeof(srp_talker_failed_first_value),                     \
+            sizeof(srp_listener_first_value), sizeof(srp_domain_first_value),                      \
+            sizeof(mmrp_mac_vector_first_value), sizeof(mvrp_vid_vector_first_value)               \
+    }
 
 #define PENDING_JOIN_NEW 0x01
 #define PENDING_JOIN     0x02
 #define PENDING_LEAVE    0x04
-
 
 #define MRP_JOINTIMER_PERIOD_CENTISECONDS 20
 
 #define MRP_LEAVETIMER_PERIOD_CENTISECONDS 80
 
 #define MRP_LEAVEALL_TIMER_PERIOD_CENTISECONDS 1000
-#define MRP_LEAVEALL_TIMER_MULTIPLIER 100
+#define MRP_LEAVEALL_TIMER_MULTIPLIER          100
 
 #define MRP_PERIODIC_TIMER_PERIOD_CENTISECONDS 100
-#define MRP_PERIODIC_TIMER_MULTIPLIER 10
+#define MRP_PERIODIC_TIMER_MULTIPLIER          10
 
 void mrp_debug_dump_attrs(void);
 
@@ -111,8 +111,8 @@ void mrp_init(char macaddr[]);
 
    \param st the attribute state structure to intialize
    \param t the type of the attribute
-   \param port_num the id number of the Ethernet port to associate the attribute with
-   \param info a void * pointer that will be associated with the attribute.
+   \param port_num the id number of the Ethernet port to associate the attribute
+   with \param info a void * pointer that will be associated with the attribute.
                This pointer is passed on to attribute specific functions
                (e.g. functions to send particulars PDUs)
 
@@ -135,7 +135,6 @@ void mrp_attribute_init(mrp_attribute_state *st,
 */
 void mrp_mad_begin(mrp_attribute_state *st);
 
-
 /** Function: mrp_mad_join
 
    Issue a MAD_Join.request service primitive for the attribute. The MRP state
@@ -151,29 +150,29 @@ void mrp_mad_join(mrp_attribute_state *st, int new);
 /** Function: mrp_mad_leave
 
    This function registers a MAD_Leave request for a particular attribute. The
-   state machines transition as if the Leave! event has occurred (see IEEE802.1ak 10.7)
+   state machines transition as if the Leave! event has occurred (see
+   IEEE802.1ak 10.7)
 
    \param st The attribute to leave
 
 */
 void mrp_mad_leave(mrp_attribute_state *st);
 
-mrp_attribute_state *mrp_match_type_non_prop_attribute(int attr_type, unsigned stream_id[2], int port_num);
+mrp_attribute_state *
+mrp_match_type_non_prop_attribute(int attr_type, unsigned stream_id[2], int port_num);
 
-mrp_attribute_state *mrp_match_attr_by_stream_and_type(mrp_attribute_state *attr, int opposite_port, int match_disabled);
+mrp_attribute_state *
+mrp_match_attr_by_stream_and_type(mrp_attribute_state *attr, int opposite_port, int match_disabled);
 int mrp_match_multiple_attrs_by_stream_and_type(mrp_attribute_state *attr, int opposite_port);
-mrp_attribute_state *mrp_match_attribute_pair_by_stream_id(mrp_attribute_state *attr, int opposite_port, int match_disabled);
+mrp_attribute_state *mrp_match_attribute_pair_by_stream_id(mrp_attribute_state *attr,
+                                                           int opposite_port,
+                                                           int match_disabled);
 
 int mrp_is_observer(mrp_attribute_state *st);
 
+void mrp_encode_three_packed_event(char *buf, int event, mrp_attribute_type attr);
 
-void mrp_encode_three_packed_event(char *buf,
-                                   int event,
-                                   mrp_attribute_type attr);
-
-void mrp_encode_four_packed_event(char *buf,
-                                  int event,
-                                  mrp_attribute_type attr);
+void mrp_encode_four_packed_event(char *buf, int event, mrp_attribute_type attr);
 
 mrp_attribute_state *mrp_get_attr(void);
 
@@ -181,7 +180,7 @@ mrp_attribute_state *mrp_get_attr(void);
 #ifdef __XC__
 extern "C" {
 #endif
-void avb_mrp_process_packet(unsigned char *buf, int etype, int len, unsigned int port_num);
+void avb_mrp_process_packet(uint8_t *buf, int etype, int len, unsigned int port_num);
 #ifdef __XC__
 }
 #endif
@@ -198,4 +197,4 @@ void mrp_periodic(CLIENT_INTERFACE(avb_interface, avb));
 
 void mrp_store_ethernet_interface(CLIENT_INTERFACE(ethernet_tx_if, i));
 
-#endif  //_avb_mrp_h_
+#endif //_avb_mrp_h_
