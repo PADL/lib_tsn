@@ -1,6 +1,6 @@
 // Copyright (c) 2011-2017, XMOS Ltd, All rights reserved
-#ifndef _avb_mrp_h_
-#define _avb_mrp_h_
+
+#pragma once
 
 #include "avb.h"
 #include "default_avb_conf.h"
@@ -196,5 +196,3 @@ void avb_mrp_process_packet(uint8_t *buf, int etype, int len, unsigned int port_
 void mrp_periodic(CLIENT_INTERFACE(avb_interface, avb));
 
 void mrp_store_ethernet_interface(CLIENT_INTERFACE(ethernet_tx_if, i));
-
-#endif //_avb_mrp_h_

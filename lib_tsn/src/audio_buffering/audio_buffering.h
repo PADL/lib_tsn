@@ -1,6 +1,6 @@
 // Copyright (c) 2015-2017, XMOS Ltd, All rights reserved
-#ifndef __AUDIO_BUFFERING_H__
-#define __AUDIO_BUFFERING_H__
+
+#pragma once
 
 #include "default_avb_conf.h"
 #include <stdint.h>
@@ -84,5 +84,3 @@ unsafe inline void audio_buffers_swap_active_buffer1(audio_double_buffer_t &buff
     audio_buffers_swap_active_buffer0(buffer);
 }
 #endif
-
-#endif // __AUDIO_BUFFERING_H__

@@ -1,6 +1,7 @@
 // Copyright (c) 2011-2017, XMOS Ltd, All rights reserved
-#ifndef __AVB_MVRP_H__
-#define __AVB_MVRP_H__
+
+#pragma once
+
 #include "default_avb_conf.h"
 #include "avb_mrp.h"
 
@@ -65,7 +66,5 @@ int avb_mvrp_match_vid_vector(mrp_attribute_state *attr, char *msg, int i);
 void avb_mvrp_vid_vector_join_ind(mrp_attribute_state *attr, int new);
 void avb_mvrp_vid_vector_leave_ind(mrp_attribute_state *attr);
 //!@}
-
-#endif
 
 #endif

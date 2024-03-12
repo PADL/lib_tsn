@@ -1,6 +1,6 @@
 // Copyright (c) 2011-2017, XMOS Ltd, All rights reserved
-#ifndef __AUDIO_OUTPUT_FIFO_h__
-#define __AUDIO_OUTPUT_FIFO_h__
+
+#pragma once
 
 #include <xccompat.h>
 #include <xc2compat.h>
@@ -235,5 +235,3 @@ void audio_output_fifo_handle_buf_ctl(chanend buf_ctl,
                                       timer tmr);
 
 ofifo_state_t audio_output_fifo_get_state(buffer_handle_t s0, unsigned index);
-
-#endif

@@ -4,8 +4,8 @@
  * \brief IEC 61883-6/AVB1722 Listener definitions
  */
 
-#ifndef _AVB1722_LISTENER_H_
-#define _AVB1722_LISTENER_H_ 1
+#pragma once
+
 #ifndef __XC__
 #define streaming
 #endif
@@ -72,5 +72,3 @@ typedef struct avb_1722_listener_state_s {
     int router_link;
     struct listener_counters counters;
 } avb_1722_listener_state_t;
-
-#endif

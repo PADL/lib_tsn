@@ -1,6 +1,6 @@
 // Copyright (c) 2011-2017, XMOS Ltd, All rights reserved
-#ifndef __gptp_config_h__
-#define __gptp_config_h__
+
+#pragma once
 
 #include "default_avb_conf.h"
 #include "ethernet_conf.h"
@@ -58,5 +58,3 @@
 #define PTP_ALLOWED_LOST_RESPONSES 3
 
 #define PTP_NEIGHBOR_PROP_DELAY_THRESH_NS 800
-
-#endif // __gptp_config_h__

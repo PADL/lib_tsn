@@ -1,6 +1,6 @@
 // Copyright (c) 2013-2017, XMOS Ltd, All rights reserved
-#ifndef __avb_mrp_types_h__
-#define __avb_mrp_types_h__
+
+#pragma once
 
 #include "misc_timer.h"
 #include "xc2compat.h"
@@ -108,6 +108,4 @@ typedef struct mrp_attribute_state {
 } mrp_attribute_state;
 #ifdef __XC__
 }
-#endif
-
 #endif

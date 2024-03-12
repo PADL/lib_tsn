@@ -1,6 +1,6 @@
 // Copyright (c) 2015-2017, XMOS Ltd, All rights reserved
-#ifndef __ptp_internal_h__
-#define __ptp_internal_h__
+
+#pragma once
 
 #include "nettypes.h"
 
@@ -106,5 +106,3 @@ void ptp_periodic(CLIENT_INTERFACE(ethernet_tx_if, i_eth), unsigned);
 void ptp_get_local_time_info_mod64(REFERENCE_PARAM(ptp_time_info_mod64, info));
 
 void ptp_output_test_clock(chanend ptp_link, port test_clock_port, int period);
-
-#endif // __ptp_internal_h__

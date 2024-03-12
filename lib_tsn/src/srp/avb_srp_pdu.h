@@ -1,6 +1,6 @@
 // Copyright (c) 2011-2017, XMOS Ltd, All rights reserved
-#ifndef _avb_srp_pdu_h_
-#define _avb_srp_pdu_h_
+
+#pragma once
 
 #define AVB_SRP_ATTRIBUTE_TYPE_TALKER_ADVERTISE 1
 #define AVB_SRP_ATTRIBUTE_TYPE_TALKER_FAILED    2
@@ -53,4 +53,3 @@ typedef struct srp_domain_first_value {
 
 #define AVB_SRP_ATTRIBUTE_TYPE_DOMAIN 4
 #define AVB_SRP_SRCLASS_DEFAULT       6
-#endif // _avb_srp_pdu_h_

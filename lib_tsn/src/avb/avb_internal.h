@@ -1,6 +1,6 @@
 // Copyright (c) 2011-2017, XMOS Ltd, All rights reserved
-#ifndef _avb_internal_h_
-#define _avb_internal_h_
+
+#pragma once
 
 #include <xccompat.h>
 #include <quadflashlib.h>
@@ -99,5 +99,3 @@ unsigned avb_get_sink_stream_index_from_stream_id(unsigned int stream_id[2]);
 
 int get_avb_ptp_gm(chanend ptp, uint8_t a0[8]);
 int get_avb_ptp_port_pdelay(chanend ptp, int srcport, unsigned *pdelay);
-
-#endif // _avb_internal_h_

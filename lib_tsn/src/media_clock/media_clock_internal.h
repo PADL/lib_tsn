@@ -1,6 +1,7 @@
 // Copyright (c) 2011-2017, XMOS Ltd, All rights reserved
-#ifndef __media_clock_internal_h__
-#define __media_clock_internal_h__
+
+#pragma once
+
 #include <xccompat.h>
 #include "default_avb_conf.h"
 #include "avb.h"
@@ -54,5 +55,3 @@ void update_media_clock_stream_info(int clock_index,
                                     int fill);
 
 void inform_media_clock_of_lock(int clock_index);
-
-#endif

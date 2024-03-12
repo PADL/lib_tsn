@@ -1,6 +1,6 @@
 // Copyright (c) 2013-2017, XMOS Ltd, All rights reserved
-#ifndef _avb_mrp_debug_strings_h_
-#define _avb_mrp_debug_strings_h_
+
+#pragma once
 
 char *debug_mrp_applicant_state[] = {
     "MRP_UNUSED", "MRP_DISABLED",
@@ -47,5 +47,3 @@ char *debug_attribute_type[] = {"MSRP_TALKER_ADVERTISE",  "MSRP_TALKER_FAILED", 
 char *debug_attribute_event[] = {"MRP_ATTRIBUTE_EVENT_NEW", "MRP_ATTRIBUTE_EVENT_JOININ",
                                  "MRP_ATTRIBUTE_EVENT_IN",  "MRP_ATTRIBUTE_EVENT_JOINMT",
                                  "MRP_ATTRIBUTE_EVENT_MT",  "MRP_ATTRIBUTE_EVENT_LV"};
-
-#endif

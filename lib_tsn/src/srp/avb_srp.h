@@ -1,6 +1,7 @@
 // Copyright (c) 2011-2017, XMOS Ltd, All rights reserved
-#ifndef _avb_srp_h_
-#define _avb_srp_h_
+
+#pragma once
+
 #include <xccompat.h>
 #include "xc2compat.h"
 #include "avb_srp_pdu.h"
@@ -98,5 +99,3 @@ void srp_domain_init(void);
 void srp_domain_join(void);
 
 void srp_store_ethernet_interface(CLIENT_INTERFACE(ethernet_tx_if, i));
-
-#endif // _avb_srp_h_

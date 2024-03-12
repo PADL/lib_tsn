@@ -5,8 +5,7 @@
  * \brief IEC 61883-6/AVB1722 Audio over 1722 AVB Transport.
  */
 
-#ifndef _AVB1722_DEF_H_
-#define _AVB1722_DEF_H_ 1
+#pragma once
 
 #include <inttypes.h>
 
@@ -246,5 +245,3 @@ enum {
 #define AVB1722_PACKET_PERIOD_TIMER_TICKS (((100000000 / AVB1722_PACKET_RATE) * 98) / 100)
 
 #define AVB1722_PLUS_SIP_HEADER_SIZE (24 + AVB_CIP_HDR_SIZE)
-
-#endif

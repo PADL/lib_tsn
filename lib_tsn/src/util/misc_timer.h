@@ -1,6 +1,6 @@
 // Copyright (c) 2011-2017, XMOS Ltd, All rights reserved
-#ifndef MISC_TIMER_H_
-#define MISC_TIMER_H_
+
+#pragma once
 
 #include <xccompat.h>
 
@@ -22,5 +22,3 @@ void init_avb_timer(REFERENCE_PARAM(avb_timer, tmr), int mult);
 void start_avb_timer(REFERENCE_PARAM(avb_timer, tmr), unsigned int period_cs);
 int avb_timer_expired(REFERENCE_PARAM(avb_timer, tmr));
 void stop_avb_timer(REFERENCE_PARAM(avb_timer, tmr));
-
-#endif /*MISC_TIMER_H_*/

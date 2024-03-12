@@ -1,4 +1,7 @@
 // Copyright (c) 2011-2017, XMOS Ltd, All rights reserved
+
+#pragma once
+
 #include "default_avb_conf.h"
 
 #define NUM_ETHERNET_PORTS 1

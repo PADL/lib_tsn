@@ -1,6 +1,7 @@
 // Copyright (c) 2011-2017, XMOS Ltd, All rights reserved
-#ifndef _avb_1722_router_h_
-#define _avb_1722_router_h_
+
+#pragma once
+
 #include <xccompat.h>
 #include "ethernet.h"
 #include "default_avb_conf.h"
@@ -21,5 +22,3 @@ void avb_1722_remove_stream_mapping(CLIENT_INTERFACE(ethernet_cfg_if, i_eth),
 
 void avb_1722_remove_stream_from_table(CLIENT_INTERFACE(ethernet_cfg_if, i_eth),
                                        unsigned int streamId[2]);
-
-#endif // _avb_1722_router_h_

@@ -4,8 +4,7 @@
  * \brief IEC 61883-6/AVB1722 Talker definitions
  */
 
-#ifndef __AVB_AVB1722_TALKER_H__
-#define __AVB_AVB1722_TALKER_H__ 1
+#pragma once
 
 #include "avb_1722_def.h"
 #include <inttypes.h>
@@ -123,5 +122,3 @@ typedef struct avb_1722_talker_state_s {
 } avb_1722_talker_state_t;
 
 #endif // AVB_NUM_SOURCES > 0
-
-#endif

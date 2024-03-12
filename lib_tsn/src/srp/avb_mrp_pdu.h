@@ -1,6 +1,6 @@
 // Copyright (c) 2011-2017, XMOS Ltd, All rights reserved
-#ifndef __avb_mrp_pdu_h__
-#define __avb_mrp_pdu_h__
+
+#pragma once
 
 /** \file avb_mrp_pdu.h
  *
@@ -63,5 +63,3 @@ typedef struct {
 typedef struct {
     uint8_t EndMark[2];
 } mrp_msg_footer;
-
-#endif //__avb_mrp_pdu_h__

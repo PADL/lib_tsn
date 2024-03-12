@@ -1,6 +1,6 @@
 // Copyright (c) 2011-2017, XMOS Ltd, All rights reserved
-#ifndef __media_clock_client_h__
-#define __media_clock_client_h__
+
+#pragma once
 
 #define CLK_CTL_SET_RATE 0x1
 #define CLK_CTL_STOP     0x2
@@ -27,7 +27,6 @@
 
 void notify_buf_ctl_of_info(chanend buf_ctl, int stream_num);
 void notify_buf_ctl_of_new_stream(chanend buf_ctl, int stream_num);
-#endif
 
 void buf_ctl_ack(chanend buf_ctl);
 int get_buf_ctl_adjust(chanend buf_ctl);

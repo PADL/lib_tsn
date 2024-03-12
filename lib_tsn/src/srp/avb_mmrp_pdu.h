@@ -1,6 +1,7 @@
 // Copyright (c) 2011-2017, XMOS Ltd, All rights reserved
-#ifndef _avb_mmrp_pdu_h_
-#define _avb_mmrp_pdu_h_
+
+#pragma once
+
 #include "avb_mrp_pdu.h"
 
 // We don't use the Service Requirement type
@@ -14,5 +15,3 @@ typedef struct {
 typedef struct {
     uint8_t addr[6];
 } mmrp_service_requirement_first_value;
-
-#endif // _avb_mmrp_pdu_h_

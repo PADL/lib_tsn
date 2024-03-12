@@ -1,6 +1,6 @@
 // Copyright (c) 2015-2017, XMOS Ltd, All rights reserved
-#ifndef __default_avb_conf_h__
-#define __default_avb_conf_h__
+
+#pragma once
 
 #ifdef __avb_conf_h_exists__
 #include "avb_conf.h"
@@ -77,5 +77,3 @@
 #ifndef FLASH_PAGE_SIZE
 #define FLASH_PAGE_SIZE (256)
 #endif
-
-#endif // __default_avb_conf_h__
