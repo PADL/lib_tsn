@@ -1097,7 +1097,7 @@ void avb_1722_1_aecp_aem_periodic(CLIENT_INTERFACE(ethernet_tx_if, i_eth)) {
 static void process_aem_cmd_register_unsolicited_notification(avb_1722_1_aecp_packet_t *pkt,
                                                               uint8_t src_addr[MACADDR_NUM_BYTES],
                                                               uint8_t *status) {
-    assert(unsolicited_notification_controllers_count < AVB_1722_1_MAX_NOTIFICATION_CONTROLLERS);
+    assert(unsolicited_notification_controllers_count <= AVB_1722_1_MAX_NOTIFICATION_CONTROLLERS);
 
     // TODO: support flags for timed registrations
     for (size_t i = 0; i < unsolicited_notification_controllers_count; i++) {
@@ -1146,9 +1146,8 @@ static void process_aem_cmd_deregister_unsolicited_notification(avb_1722_1_aecp_
 
     *status = AECP_AEM_STATUS_BAD_ARGUMENTS;
 
-    assert(unsolicited_notification_controllers_count < AVB_1722_1_MAX_NOTIFICATION_CONTROLLERS);
+    assert(unsolicited_notification_controllers_count <=- AVB_1722_1_MAX_NOTIFICATION_CONTROLLERS);
 
-    // TODO: do we need to check MAC address matches?
     for (i = 0; i < unsolicited_notification_controllers_count; i++) {
         if (compare_guid(pkt->controller_guid, &unsolicited_notification_controllers[i]) &&
             memcmp(src_addr, unsolicited_notification_controller_macs[i], MACADDR_NUM_BYTES) == 0) {
