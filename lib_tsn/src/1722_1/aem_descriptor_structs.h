@@ -4,6 +4,29 @@
 
 #include <inttypes.h>
 
+typedef struct aem_desc_entity_t {
+    uint8_t descriptor_type[2];
+    uint8_t descriptor_index[2];
+    uint8_t entity_id[8];
+    uint8_t entity_model_id[8];
+    uint8_t entity_capabilities[4];
+    uint8_t talker_stream_sources[2];
+    uint8_t talker_capabilities[2];
+    uint8_t listener_stream_sinks[2];
+    uint8_t listener_capabilities[2];
+    uint8_t controller_capabilities[4];
+    uint8_t available_index[4];
+    uint8_t association_id[8];
+    uint8_t entity_name[64];
+    uint8_t vendor_name_string[2];
+    uint8_t model_name_string[2];
+    uint8_t firmware_version[64];
+    uint8_t group_name[64];
+    uint8_t serial_number[64];
+    uint8_t configurations_count[2];
+    uint8_t current_configuration[2];
+} aem_desc_entity_t;
+
 typedef struct aem_desc_audio_unit_t {
     uint8_t descriptor_type[2];
     uint8_t descriptor_index[2];

@@ -164,6 +164,15 @@ unsafe void set_current_fields_in_descriptor(uint8_t *unsafe descriptor,
                                              CLIENT_INTERFACE(avb_1722_1_control_callbacks,
                                                               i_1722_1_entity)) {
     switch (read_type) {
+    case AEM_ENTITY_TYPE: {
+        aem_desc_entity_t *unsafe entity = (aem_desc_entity_t *)descriptor;
+        char entity_name[64], group_name[64];
+        if (i_1722_1_entity.get_name(read_id, read_type, 0, 0, entity_name) == AECP_AEM_STATUS_SUCCESS)
+            strncpy(entity->entity_name, entity_name, sizeof(entity_name) - 1);
+        if (i_1722_1_entity.get_name(read_id, read_type, 1, 0, group_name) == AECP_AEM_STATUS_SUCCESS)
+            strncpy(entity->group_name, group_name, sizeof(group_name) - 1);
+        break;
+    }
     case AEM_AUDIO_UNIT_TYPE:
     case AEM_CLOCK_DOMAIN_TYPE: {
         media_clock_info_t clock_info = i_avb_api._get_media_clock_info(0);
@@ -282,6 +291,31 @@ process_aem_cmd_getset_control(avb_1722_1_aecp_packet_t *unsafe pkt,
         status = i_1722_1_entity.set_control_value(control_index, values_length, values);
     }
     return values_length;
+}
+
+unsafe void
+process_aem_cmd_getset_name(avb_1722_1_aecp_packet_t *unsafe pkt,
+                            REFERENCE_PARAM(uint8_t, status),
+                            uint16_t command_type,
+                            CLIENT_INTERFACE(avb_interface, i_avb),
+                            CLIENT_INTERFACE(avb_1722_1_control_callbacks,
+                            i_1722_1_entity)) {
+    avb_1722_1_aem_getset_name_command_t *cmd =
+        (avb_1722_1_aem_getset_name_command_t *)(pkt->data.aem.command.payload);
+    uint16_t descriptor_id = ntoh_16(cmd->descriptor_id);
+    uint16_t descriptor_type = ntoh_16(cmd->descriptor_type);
+    uint16_t name_index = ntoh_16(cmd->name_index);
+    uint16_t configuration_index = ntoh_16(cmd->configuration_index);
+
+    if (command_type == AECP_AEM_CMD_GET_NAME) {
+        status = i_1722_1_entity.get_name(descriptor_id, descriptor_type, name_index,
+                                          configuration_index, cmd->name);
+    } else if (command_type == AECP_AEM_CMD_SET_NAME) {
+        status = i_1722_1_entity.set_name(descriptor_id, descriptor_type, name_index,
+                                          configuration_index, cmd->name);
+    }
+
+    return;
 }
 
 unsafe void process_aem_cmd_getset_stream_format(avb_1722_1_aecp_packet_t *unsafe pkt,

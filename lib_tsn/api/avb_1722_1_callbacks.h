@@ -77,6 +77,18 @@ interface avb_1722_1_control_callbacks {
                                       unsigned short signal_type,
                                       unsigned short signal_index,
                                       unsigned short signal_output);
+
+    unsigned char get_name(unsigned short descriptor_type,
+                           unsigned short descriptor_index,
+                           unsigned short name_index,
+                           unsigned short configuration_index,
+                           char name[64]);
+
+    unsigned char set_name(unsigned short descriptor_type,
+                           unsigned short descriptor_index,
+                           unsigned short name_index,
+                           unsigned short configuration_index,
+                           const char name[64]);
 };
 #endif
 

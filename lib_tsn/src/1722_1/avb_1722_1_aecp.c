@@ -761,6 +761,13 @@ static void process_avb_1722_1_aecp_aem_msg(avb_1722_1_aecp_packet_t *pkt,
 
             break;
         }
+        case AECP_AEM_CMD_GET_NAME:
+        case AECP_AEM_CMD_SET_NAME: // Fallthrough intentional
+        {
+            process_aem_cmd_getset_name(pkt, &status, command_type, i_avb_api, i_1722_1_entity);
+            cd_len = sizeof(avb_1722_1_aem_getset_name_command_t);
+            break;
+        }
         case AECP_AEM_CMD_GET_AVB_INFO: {
             process_aem_cmd_get_avb_info(pkt, &status, i_avb_api, c_ptp);
             cd_len = sizeof(avb_1722_1_aem_get_avb_info_response_t);

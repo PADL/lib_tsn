@@ -1,6 +1,5 @@
 // Copyright (c) 2012-2017, XMOS Ltd, All rights reserved
-#ifndef AVB_1722_1_AECP_AEM_H_
-#define AVB_1722_1_AECP_AEM_H_
+#pragma once
 
 #include <inttypes.h>
 
@@ -145,6 +144,15 @@ typedef struct {
     uint8_t flags[4];
     uint8_t locked_guid[8];
 } avb_1722_1_aem_lock_entity_command_t;
+
+/* 7.4.17. SET_NAME Command */
+typedef struct {
+    uint8_t descriptor_type[2];
+    uint8_t descriptor_id[2];
+    uint8_t name_index[2];
+    uint8_t configuration_index[2];
+    uint8_t name[64];
+} avb_1722_1_aem_getset_name_command_t;
 
 /* 7.4.40.1 GET_AVB_INFO Command */
 typedef struct {
@@ -294,5 +302,3 @@ typedef struct {
     uint8_t operation_id[2];
     uint8_t percent_complete[2];
 } avb_1722_1_aem_operation_status_t;
-
-#endif /* AVB_1722_1_AECP_AEM_H_ */
