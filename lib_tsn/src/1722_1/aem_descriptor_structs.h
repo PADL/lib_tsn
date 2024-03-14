@@ -4,6 +4,12 @@
 
 #include <inttypes.h>
 
+typedef struct aem_desc_common_header_t {
+    uint8_t descriptor_type[2];
+    uint8_t descriptor_index[2];
+    uint8_t object_name[64];
+} aem_desc_common_header_t;
+
 typedef struct aem_desc_entity_t {
     uint8_t descriptor_type[2];
     uint8_t descriptor_index[2];

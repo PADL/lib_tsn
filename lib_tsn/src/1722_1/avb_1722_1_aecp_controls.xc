@@ -156,6 +156,19 @@ static int unpack_stream_format(uint8_t stream_format[8],
     }
 }
 
+static unsafe void get_object_name(uint8_t *unsafe descriptor,
+                                   unsigned int desc_size_bytes,
+                                   unsigned int read_type,
+                                   unsigned int read_id,
+                                   CLIENT_INTERFACE(avb_1722_1_control_callbacks,
+                                                    i_1722_1_entity)) {
+    aem_desc_common_header_t *unsafe hdr = (aem_desc_common_header_t *)descriptor;
+    char object_name[64];
+
+    if (i_1722_1_entity.get_name(read_id, read_type, 0, 0, object_name) == AECP_AEM_STATUS_SUCCESS)
+        strncpy(hdr->object_name, object_name, sizeof(object_name) - 1);
+}
+
 unsafe void set_current_fields_in_descriptor(uint8_t *unsafe descriptor,
                                              unsigned int desc_size_bytes,
                                              unsigned int read_type,
@@ -183,6 +196,7 @@ unsafe void set_current_fields_in_descriptor(uint8_t *unsafe descriptor,
             aem_desc_clock_domain_t *clock_domain = (aem_desc_clock_domain_t *)descriptor;
             hton_16(clock_domain->clock_source_index, clock_info.clock_type);
         }
+        get_object_name(descriptor, desc_size_bytes, read_type, read_id, i_1722_1_entity);
         break;
     }
     case AEM_STREAM_INPUT_TYPE:
@@ -198,6 +212,7 @@ unsafe void set_current_fields_in_descriptor(uint8_t *unsafe descriptor,
             stream = &source.stream;
         }
         get_stream_format_field(stream, stream_inout->current_format);
+        get_object_name(descriptor, desc_size_bytes, read_type, read_id, i_1722_1_entity);
         break;
     }
     case AEM_CONTROL_TYPE:
@@ -216,6 +231,7 @@ unsafe void set_current_fields_in_descriptor(uint8_t *unsafe descriptor,
         } else {
             fail("Unsupported control value type");
         }
+        get_object_name(descriptor, desc_size_bytes, read_type, read_id, i_1722_1_entity);
         break;
     case AEM_SIGNAL_SELECTOR_TYPE:
         aem_desc_signal_selector_t *unsafe signal_selector =
@@ -228,6 +244,7 @@ unsafe void set_current_fields_in_descriptor(uint8_t *unsafe descriptor,
         hton_16(signal_selector->current_signal_type, signal_type);
         hton_16(signal_selector->current_signal_index, signal_index);
         hton_16(signal_selector->current_signal_output, signal_output);
+        get_object_name(descriptor, desc_size_bytes, read_type, read_id, i_1722_1_entity);
         break;
     default:
         break;
