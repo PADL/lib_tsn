@@ -27,6 +27,8 @@
 #endif
 #include "aem_descriptor_structs.h"
 
+// #define AVB_1722_1_AECP_DEBUG_NOTIFICATIONS 1
+
 extern unsigned int avb_1722_1_buf[AVB_1722_1_PACKET_SIZE_WORDS];
 extern guid_t my_guid;
 extern uint8_t my_mac_addr[MACADDR_NUM_BYTES];
@@ -81,7 +83,7 @@ static enum {
 
 // Unsolicited notification support.
 #define AVB_1722_1_MAX_NOTIFICATION_CONTROLLERS 16
-static size_t unsolicited_notification_controllers_count = 0;
+static unsigned int unsolicited_notification_controllers_count = 0;
 static guid_t unsolicited_notification_controllers[AVB_1722_1_MAX_NOTIFICATION_CONTROLLERS];
 static uint8_t unsolicited_notification_controller_macs[AVB_1722_1_MAX_NOTIFICATION_CONTROLLERS]
                                                        [MACADDR_NUM_BYTES];
@@ -1100,13 +1102,13 @@ static void process_aem_cmd_register_unsolicited_notification(avb_1722_1_aecp_pa
     assert(unsolicited_notification_controllers_count <= AVB_1722_1_MAX_NOTIFICATION_CONTROLLERS);
 
     // TODO: support flags for timed registrations
-    for (size_t i = 0; i < unsolicited_notification_controllers_count; i++) {
+    for (unsigned int i = 0; i < unsolicited_notification_controllers_count; i++) {
         if (compare_guid(pkt->controller_guid, &unsolicited_notification_controllers[i])) {
 #if AVB_1722_1_AECP_DEBUG_NOTIFICATIONS
             debug_printf("process_aem_cmd_register_unsolicited_notification: "
-                         "controller %08x:%08x already registered\n",
+                         "controller %08x:%08x already registered in slot %u\n",
                          unsolicited_notification_controllers[i].l << 32,
-                         unsolicited_notification_controllers[i].l);
+                         unsolicited_notification_controllers[i].l, (unsigned int)i);
 #endif
             *status = AECP_AEM_STATUS_SUCCESS;
             return;
@@ -1142,7 +1144,7 @@ static void process_aem_cmd_register_unsolicited_notification(avb_1722_1_aecp_pa
 static void process_aem_cmd_deregister_unsolicited_notification(avb_1722_1_aecp_packet_t *pkt,
                                                                 uint8_t src_addr[MACADDR_NUM_BYTES],
                                                                 uint8_t *status) {
-    size_t i;
+    unsigned int i;
 
     *status = AECP_AEM_STATUS_BAD_ARGUMENTS;
 
@@ -1212,7 +1214,7 @@ static void send_unsolicited_notifications(CLIENT_INTERFACE(ethernet_tx_if, i_et
 #endif
     }
 
-    for (size_t i = 0; i < unsolicited_notification_controllers_count; i++) {
+    for (unsigned int i = 0; i < unsolicited_notification_controllers_count; i++) {
         if (memcmp(&unsolicited_notification_controllers[i], &requesting_controller_guid,
                    sizeof(requesting_controller_guid)) == 0 ||
             (entity_acquired_status == AECP_AEM_STATUS_ENTITY_ACQUIRED &&
