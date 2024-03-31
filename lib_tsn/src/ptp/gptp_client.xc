@@ -94,10 +94,12 @@ void ptp_get_propagation_delay(chanend ptp_server, unsigned *pdelay) {
 }
 
 void ptp_get_as_path(chanend ptp_server,
+                     uint16_t port_num,
                      n64_t pathSequence[PTP_MAXIMUM_PATH_TRACE_TLV],
                      uint16_t *count) {
     send_cmd(ptp_server, PTP_GET_AS_PATH);
     slave {
+        ptp_server <: port_num;
         ptp_server :> *count;
         for (uint16_t i = 0; i < *count; i++)
             ptp_server :> pathSequence[i];

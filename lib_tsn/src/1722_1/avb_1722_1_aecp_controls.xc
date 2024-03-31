@@ -618,12 +618,12 @@ unsafe void process_aem_cmd_get_as_path(avb_1722_1_aecp_packet_t *unsafe pkt,
 
     hton_16(cmd->count, 0);
 
-    if (interface_id != 0) {
+    if (interface_id >= PTP_NUM_PORTS) {
         status = AECP_AEM_STATUS_NO_SUCH_DESCRIPTOR;
         return;
     }
 
-    ptp_get_as_path(c_ptp, pathSequence, &count);
+    ptp_get_as_path(c_ptp, interface_id, pathSequence, &count);
     assert(count <= PTP_MAXIMUM_PATH_TRACE_TLV);
 
     hton_16(cmd->count, count);

@@ -84,10 +84,13 @@ static int periodic_counter[PTP_NUM_PORTS];
 #define DEBUG_PRINT_AS_CAPABLE   0
 #define DEBUG_PRINT_PDELAY_CLAMP 0
 
+// FIXME: update to take a port number (but this function doesn't appear to be used anywhere?)
 ptp_port_role_t ptp_current_state() {
-    // TODO: FIME
+#if PTP_NUM_PORTS == 1
+    return ptp_port_info[0].role_state;
+#else
     return 0;
-    // return ptp_state;
+#endif
 }
 
 [[dual_issue]] unsigned local_timestamp_to_ptp_mod32(unsigned local_ts, ptp_time_info_mod64 &info) {
@@ -1398,8 +1401,17 @@ void ptp_current_grandmaster(char grandmaster[8]) {
     memcpy(grandmaster, best_announce_msg.grandmasterIdentity.data, 8);
 }
 
-void ptp_get_path_sequence(uint16_t *count, n64_t pathSequence[PTP_MAXIMUM_PATH_TRACE_TLV]) {
-    memcpy(&pathSequence[0], &best_announce_msg.pathSequence[0], steps_removed_from_gm * 8);    
-    memcpy(&pathSequence[steps_removed_from_gm], &my_port_id, 8);
-    *count = steps_removed_from_gm + 1;
+void ptp_get_path_sequence(uint16_t port_num, uint16_t *count, n64_t pathSequence[PTP_MAXIMUM_PATH_TRACE_TLV]) {
+    int clock_identity_comp = compare_clock_identity_to_me(&best_announce_msg.grandmasterIdentity); // 0 if equal
+
+    *count = 0;
+
+    if (port_num >= PTP_NUM_PORTS || clock_identity_comp + steps_removed_from_gm + 1 > PTP_MAXIMUM_PATH_TRACE_TLV)
+        return;
+
+    if (clock_identity_comp)
+        memcpy(&pathSequence[0].data, best_announce_msg.grandmasterIdentity.data, 8);
+    memcpy(&pathSequence[clock_identity_comp].data, &best_announce_msg.pathSequence[0].data, steps_removed_from_gm * 8);
+    memcpy(&pathSequence[clock_identity_comp + steps_removed_from_gm].data, my_port_id.data, 8);
+    *count = clock_identity_comp + steps_removed_from_gm + 1;
 }
