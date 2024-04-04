@@ -9,12 +9,15 @@
 #include "avb_1722_1_callbacks.h"
 #include "media_clock_internal.h"
 #include "ethernet.h"
+#include "ethernet_wrappers.h"
+#include "uart.h"
 
 #ifndef MAX_AVB_CONTROL_PACKET_SIZE
 #define MAX_AVB_CONTROL_PACKET_SIZE (1518)
 #endif
 
 #ifdef __XC__
+
 /** Process an AVB 1722 control packet.
 
    This function processes a 1722 ethernet packet with the control data bit set
@@ -32,7 +35,8 @@
 void avb_process_1722_control_packet(unsigned int buf[],
                                      unsigned nbytes,
                                      eth_packet_type_t packet_type,
-                                     client interface ethernet_tx_if i_eth,
+                                     CLIENT_INTERFACE(ethernet_tx_if, i_eth),
+                                     CLIENT_INTERFACE(uart_tx_buffered_if ?, i_uart),
                                      client interface avb_interface i_avb,
                                      client interface avb_1722_1_control_callbacks i_1722_1_entity,
                                      chanend c_ptp);

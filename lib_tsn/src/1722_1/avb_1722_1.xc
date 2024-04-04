@@ -1,4 +1,5 @@
 // Copyright (c) 2013-2017, XMOS Ltd, All rights reserved
+// Portions Copyright (c) 2024, PADL Software Pty Ltd, All rights reserved
 #include <print.h>
 #include <string.h>
 #include "xassert.h"
@@ -17,6 +18,7 @@
 #include "avb_srp.h"
 #include "avb_mvrp.h"
 #include "otp_board_info.h"
+#include "cobs.h"
 
 #define PERIODIC_POLL_TIME 5000
 
@@ -61,7 +63,8 @@ void avb_1722_1_init(uint8_t macaddr[MACADDR_NUM_BYTES], unsigned serial_num) {
 void avb_1722_1_process_packet(uint8_t buf[len],
                                unsigned len,
                                uint8_t src_addr[6],
-                               client interface ethernet_tx_if i_eth,
+                               CLIENT_INTERFACE(ethernet_tx_if, i_eth),
+                               CLIENT_INTERFACE(uart_tx_buffered_if ?, i_uart),
                                CLIENT_INTERFACE(avb_interface, i_avb_api),
                                CLIENT_INTERFACE(avb_1722_1_control_callbacks, i_1722_1_entity),
                                chanend c_ptp) {
@@ -72,16 +75,16 @@ void avb_1722_1_process_packet(uint8_t buf[len],
     switch (subtype) {
     case DEFAULT_1722_1_ADP_SUBTYPE:
         if (datalen == AVB_1722_1_ADP_CD_LENGTH) {
-            process_avb_1722_1_adp_packet(*(avb_1722_1_adp_packet_t *)pkt, i_eth);
+            process_avb_1722_1_adp_packet(*(avb_1722_1_adp_packet_t *)pkt, i_eth, i_uart);
         }
         return;
     case DEFAULT_1722_1_AECP_SUBTYPE:
-        process_avb_1722_1_aecp_packet(src_addr, (avb_1722_1_aecp_packet_t *)pkt, len, i_eth,
+        process_avb_1722_1_aecp_packet(src_addr, (avb_1722_1_aecp_packet_t *)pkt, len, i_eth, i_uart,
                                        i_avb_api, i_1722_1_entity, c_ptp);
         return;
     case DEFAULT_1722_1_ACMP_SUBTYPE:
         if (datalen == AVB_1722_1_ACMP_CD_LENGTH) {
-            process_avb_1722_1_acmp_packet((avb_1722_1_acmp_packet_t *)pkt, i_eth);
+            process_avb_1722_1_acmp_packet((avb_1722_1_acmp_packet_t *)pkt, i_eth, i_uart);
         }
         return;
     default:
@@ -89,21 +92,22 @@ void avb_1722_1_process_packet(uint8_t buf[len],
     }
 }
 
-void avb_1722_1_periodic(client interface ethernet_tx_if i_eth,
+void avb_1722_1_periodic(CLIENT_INTERFACE(ethernet_tx_if, i_eth),
+                         CLIENT_INTERFACE(uart_tx_buffered_if ?, i_uart),
                          chanend c_ptp,
                          client interface avb_interface i_avb) {
-    avb_1722_1_adp_advertising_periodic(i_eth, c_ptp, i_avb);
+    avb_1722_1_adp_advertising_periodic(i_eth, i_uart, c_ptp, i_avb);
 #if (AVB_1722_1_CONTROLLER_ENABLED)
-    avb_1722_1_adp_discovery_periodic(i_eth, i_avb);
-    avb_1722_1_acmp_controller_periodic(i_eth, i_avb);
+    avb_1722_1_adp_discovery_periodic(i_eth, i_uart, i_avb);
+    avb_1722_1_acmp_controller_periodic(i_eth, i_uart, i_avb);
 #endif
 #if (AVB_1722_1_TALKER_ENABLED)
-    avb_1722_1_acmp_talker_periodic(i_eth, i_avb);
+    avb_1722_1_acmp_talker_periodic(i_eth, i_uart, i_avb);
 #endif
 #if (AVB_1722_1_LISTENER_ENABLED)
-    avb_1722_1_acmp_listener_periodic(i_eth, i_avb);
+    avb_1722_1_acmp_listener_periodic(i_eth, i_uart, i_avb);
 #endif
-    avb_1722_1_aecp_aem_periodic(i_eth);
+    avb_1722_1_aecp_aem_periodic(i_eth, i_uart);
 }
 
 // avb_mrp.c:
@@ -118,12 +122,18 @@ void avb_1722_1_maap_srp_task(client interface avb_interface i_avb,
                               client interface ethernet_tx_if i_eth_tx,
                               client interface ethernet_cfg_if i_eth_cfg,
                               chanend c_ptp,
-                              otp_ports_t &?otp_ports) {
+                              otp_ports_t &?otp_ports,
+                              client interface uart_rx_if ?i_uart_rx,
+                              client interface uart_tx_buffered_if ?i_uart_tx) {
     unsigned periodic_timeout;
     timer tmr;
-    unsigned int buf[(ETHERNET_MAX_PACKET_SIZE + 3) >> 2];
+    unsigned int buf[(ETHERNET_MAX_PACKET_SIZE + 3) / 4];
     uint8_t mac_addr[6];
-    unsigned int serial = 0x12345678;
+    unsigned int serial = 0;
+
+    uart_state state = UART_STATE_SYNCHRONIZING;
+    uint8_t cobs_encoded_buf[COBS_BUFFER_SIZE];
+    size_t cobs_bytes_read = 0;
 
     if (!isnull(otp_ports)) {
         otp_board_info_get_serial(otp_ports, serial);
@@ -172,32 +182,42 @@ void avb_1722_1_maap_srp_task(client interface avb_interface i_avb,
     avb_1722_maap_request_addresses(AVB_NUM_SOURCES, null);
 #endif
 
-  tmr :> periodic_timeout;
+    tmr :> periodic_timeout;
 
-  while (1) {
-      select {
-      // Receive and process any incoming AVB packets (802.1Qat, 1722_MAAP)
-      case i_eth_rx.packet_ready(): {
-          ethernet_packet_info_t packet_info;
-          i_eth_rx.get_packet(packet_info, (char *)buf, ETHERNET_MAX_PACKET_SIZE);
-          avb_process_srp_control_packet(i_avb, buf, packet_info.len, packet_info.type, i_eth_tx,
-                                         packet_info.src_ifnum);
-          avb_process_1722_control_packet(buf, packet_info.len, packet_info.type, i_eth_tx, i_avb,
-                                          i_1722_1_entity, c_ptp);
-          break;
-      }
-      // Periodic processing
-      case tmr when timerafter(periodic_timeout) :> unsigned int time_now:
-      {
-          avb_1722_1_periodic(i_eth_tx, c_ptp, i_avb);
-          avb_1722_maap_periodic(i_eth_tx, i_avb);
-          mrp_periodic(i_avb);
+    while (1) {
+        select {
+            // Receive and process any incoming AVB packets (802.1Qat, 1722_MAAP)
+            case i_eth_rx.packet_ready(): {
+                ethernet_packet_info_t packet_info;
+                i_eth_rx.get_packet(packet_info, (char *)buf, ETHERNET_MAX_PACKET_SIZE);
+                avb_process_srp_control_packet(i_avb, buf, packet_info.len, packet_info.type, i_eth_tx,
+                                               packet_info.src_ifnum);
+                avb_process_1722_control_packet(buf, packet_info.len, packet_info.type,
+                                                i_eth_tx, i_uart_tx, i_avb,
+                                                i_1722_1_entity, c_ptp);
+                break;
+            }
+            case !isnull(i_uart_rx) => i_uart_rx.data_ready():
+                uint8_t byte = i_uart_rx.read();
+                size_t payload_len;
 
-          periodic_timeout = time_now + PERIODIC_POLL_TIME;
-          break;
-      }
-      }
-  }
+                if (uart_rx_byte(state, byte, cobs_encoded_buf, cobs_bytes_read, (uint8_t *)buf, payload_len) == 1) {
+                    avb_process_1722_control_packet(buf, payload_len, ETH_RAW_DATA,
+                                                    i_eth_tx, i_uart_tx, i_avb,
+                                                    i_1722_1_entity, c_ptp);
+                }
+                break;
+            // Periodic processing
+            case tmr when timerafter(periodic_timeout) :> unsigned int time_now: {
+                avb_1722_1_periodic(i_eth_tx, i_uart_tx, c_ptp, i_avb);
+                avb_1722_maap_periodic(i_eth_tx, i_avb);
+                mrp_periodic(i_avb);
+
+                periodic_timeout = time_now + PERIODIC_POLL_TIME;
+                break;
+            }
+        }
+    }
 }
 
 [[combinable]]
@@ -208,12 +228,18 @@ void avb_1722_1_maap_task(otp_ports_t &?otp_ports,
                               client interface ethernet_rx_if i_eth_rx,
                               client interface ethernet_tx_if i_eth_tx,
                               client interface ethernet_cfg_if i_eth_cfg,
-                              chanend c_ptp) {
+                              chanend c_ptp,
+                              client interface uart_rx_if ?i_uart_rx,
+                              client interface uart_tx_buffered_if ?i_uart_tx) {
   unsigned periodic_timeout;
   timer tmr;
-  unsigned int buf[(ETHERNET_MAX_PACKET_SIZE + 3) >> 2];
+  unsigned int buf[(ETHERNET_MAX_PACKET_SIZE + 3) / 4];
   uint8_t mac_addr[6];
-  unsigned int serial = 0x12345678;
+  unsigned int serial = 0;
+
+  uart_state state = UART_STATE_SYNCHRONIZING;
+  uint8_t cobs_encoded_buf[COBS_BUFFER_SIZE];
+  size_t cobs_bytes_read = 0;
 
   if (!isnull(otp_ports)) {
       otp_board_info_get_serial(otp_ports, serial);
@@ -253,14 +279,24 @@ void avb_1722_1_maap_task(otp_ports_t &?otp_ports,
           ethernet_packet_info_t packet_info;
           i_eth_rx.get_packet(packet_info, (char *)buf, AVB_1722_1_PACKET_SIZE_WORDS * 4);
 
-          avb_process_1722_control_packet(buf, packet_info.len, packet_info.type, i_eth_tx, i_avb,
+          avb_process_1722_control_packet(buf, packet_info.len, packet_info.type,
+                                          i_eth_tx, i_uart_tx, i_avb,
                                           i_1722_1_entity, c_ptp);
           break;
       }
+      case !isnull(i_uart_rx) => i_uart_rx.data_ready():
+          uint8_t byte = i_uart_rx.read();
+          size_t payload_len;
+
+          if (uart_rx_byte(state, byte, cobs_encoded_buf, cobs_bytes_read, (uint8_t *)buf, payload_len) == 1)
+              avb_process_1722_control_packet(buf, payload_len, ETH_RAW_DATA,
+                                              i_eth_tx, i_uart_tx, i_avb,
+                                              i_1722_1_entity, c_ptp);
+          break;
       // Periodic processing
       case tmr when timerafter(periodic_timeout) :> unsigned int time_now:
       {
-          avb_1722_1_periodic(i_eth_tx, c_ptp, i_avb);
+          avb_1722_1_periodic(i_eth_tx, i_uart_tx, c_ptp, i_avb);
           avb_1722_maap_periodic(i_eth_tx, i_avb);
 
           periodic_timeout += PERIODIC_POLL_TIME;

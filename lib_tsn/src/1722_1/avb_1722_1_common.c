@@ -69,7 +69,7 @@ void avb_1722_1_create_1722_1_header(const uint8_t *dest_addr,
     avb_1722_1_packet_header_t *pkt =
         (avb_1722_1_packet_header_t *)(hdr + AVB_1722_1_PACKET_BODY_POINTER_OFFSET);
 
-    for (int i = 0; i < 6; i++) {
+    for (int i = 0; i < MACADDR_NUM_BYTES; i++) {
         hdr->dest_addr[i] = dest_addr[i];
         hdr->src_addr[i] = my_mac_addr[i];
     }

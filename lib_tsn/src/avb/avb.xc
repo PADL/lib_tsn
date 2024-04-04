@@ -16,11 +16,13 @@
 #include "avb_1722_1_acmp.h"
 #include "avb_1722_talker.h"
 #include "avb_1722_listener.h"
+#include "ethernet_wrappers.h"
 
 #if AVB_ENABLE_1722_1
 #include "avb_1722_1.h"
 #include "avb_1722_1_adp.h"
 #include "gptp_internal.h"
+#include "avb_internal.h"
 #endif
 
 // #define AVB_TRANSMIT_BEFORE_RESERVATION 1
@@ -594,11 +596,11 @@ void set_avb_source_volumes(unsigned sink_num, int volumes[], int count) {
 void avb_process_1722_control_packet(unsigned int buf0[],
                                      unsigned nbytes,
                                      eth_packet_type_t packet_type,
-                                     client interface ethernet_tx_if i_eth,
+                                     CLIENT_INTERFACE(ethernet_tx_if, i_eth),
+                                     CLIENT_INTERFACE(uart_tx_buffered_if ?, i_uart),
                                      client interface avb_interface i_avb,
                                      client interface avb_1722_1_control_callbacks i_1722_1_entity,
                                      chanend c_ptp) {
-
     if (packet_type == ETH_IF_STATUS) {
     if (((uint8_t *)buf0)[0] == ETHERNET_LINK_UP) {
       if (NUM_ETHERNET_PORTS == 1) {
@@ -610,7 +612,7 @@ void avb_process_1722_control_packet(unsigned int buf0[],
       }
 
 #if AVB_1722_1_FAST_CONNECT_ENABLED
-      acmp_start_fast_connect(i_eth);
+      acmp_start_fast_connect(i_eth, i_uart);
 #endif
       }
     }
@@ -635,14 +637,18 @@ void avb_process_1722_control_packet(unsigned int buf0[],
     switch (etype) {
     case AVB_1722_ETHERTYPE:
 #if AVB_ENABLE_1722_1
-      avb_1722_1_process_packet(&buf[eth_hdr_size], len, ethernet_hdr->src_addr, i_eth, i_avb,
-                                i_1722_1_entity, c_ptp);
+      avb_1722_1_process_packet(&buf[eth_hdr_size], len, ethernet_hdr->src_addr, i_eth, i_uart,
+                                i_avb, i_1722_1_entity, c_ptp);
 #endif
 #if AVB_ENABLE_1722_MAAP
       avb_1722_maap_process_packet(&buf[eth_hdr_size], len, ethernet_hdr->src_addr, i_eth);
 #endif
       break;
     }
+    } else if (packet_type == ETH_RAW_DATA) {
+        uint8_t *buf = (uint8_t *)buf0;
+        avb_1722_1_process_packet(buf, nbytes, uart_proxy_address, i_eth, i_uart,
+                                  i_avb, i_1722_1_entity, c_ptp);
     }
 }
 

@@ -8,6 +8,7 @@
 #include <xccompat.h>
 #include "xc2compat.h"
 #include "avb_1722_1_acmp_pdu.h"
+#include "ethernet_wrappers.h"
 
 #define AVB_1722_1_ACMP_DEST_MAC {0x91, 0xe0, 0xf0, 0x01, 0x00, 0x00};
 
@@ -48,11 +49,14 @@ void avb_1722_1_acmp_talker_init();
 void avb_1722_1_acmp_listener_init();
 
 #ifdef __XC__
-void avb_1722_1_acmp_controller_periodic(client interface ethernet_tx_if i_eth,
+void avb_1722_1_acmp_controller_periodic(CLIENT_INTERFACE(ethernet_tx_if, i_eth),
+                                         CLIENT_INTERFACE(uart_tx_buffered_if ?, i_uart),
                                          client interface avb_interface avb);
-void avb_1722_1_acmp_talker_periodic(client interface ethernet_tx_if i_eth,
+void avb_1722_1_acmp_talker_periodic(CLIENT_INTERFACE(ethernet_tx_if, i_eth),
+                                     CLIENT_INTERFACE(uart_tx_buffered_if ?, i_uart),
                                      client interface avb_interface avb);
-void avb_1722_1_acmp_listener_periodic(client interface ethernet_tx_if i_eth,
+void avb_1722_1_acmp_listener_periodic(CLIENT_INTERFACE(ethernet_tx_if, i_eth),
+                                       CLIENT_INTERFACE(uart_tx_buffered_if ?, i_uart),
                                        client interface avb_interface avb);
 #endif
 
@@ -75,7 +79,8 @@ void avb_1722_1_controller_connect(const_guid_ref_t talker_guid,
                                    const_guid_ref_t listener_guid,
                                    int talker_id,
                                    int listener_id,
-                                   CLIENT_INTERFACE(ethernet_tx_if, i_eth));
+                                   CLIENT_INTERFACE(ethernet_tx_if, i_eth),
+                                   CLIENT_INTERFACE(uart_tx_buffered_if ?, i_uart));
 
 /** Disconnect an existing stream connection between a Talker and Listener
  *entity.
@@ -98,7 +103,8 @@ void avb_1722_1_controller_disconnect(const_guid_ref_t talker_guid,
                                       const_guid_ref_t listener_guid,
                                       int talker_id,
                                       int listener_id,
-                                      CLIENT_INTERFACE(ethernet_tx_if, i_eth));
+                                      CLIENT_INTERFACE(ethernet_tx_if, i_eth),
+                                      CLIENT_INTERFACE(uart_tx_buffered_if ?, i_uart));
 
 /** Disconnect all Listener sinks currently connected to the Talker stream
  *source with ``talker_id``
@@ -111,7 +117,8 @@ void avb_1722_1_controller_disconnect(const_guid_ref_t talker_guid,
  *
  **/
 void avb_1722_1_controller_disconnect_all_listeners(int talker_id,
-                                                    CLIENT_INTERFACE(ethernet_tx_if, i_eth));
+                                                    CLIENT_INTERFACE(ethernet_tx_if, i_eth),
+                                                    CLIENT_INTERFACE(uart_tx_buffered_if ?, i_uart));
 
 /** Disconnect the Talker source currently connected to the Listener stream sink
  *with ``listener_id``
@@ -124,7 +131,8 @@ void avb_1722_1_controller_disconnect_all_listeners(int talker_id,
  *
  **/
 void avb_1722_1_controller_disconnect_talker(int listener_id,
-                                             CLIENT_INTERFACE(ethernet_tx_if, i_eth));
+                                             CLIENT_INTERFACE(ethernet_tx_if, i_eth),
+                                             CLIENT_INTERFACE(uart_tx_buffered_if ?, i_uart));
 
 /**
  *
@@ -184,18 +192,22 @@ void acmp_send_command(int entity_type,
                        avb_1722_1_acmp_cmd_resp *alias command,
                        int retry,
                        int inflight_idx,
-                       CLIENT_INTERFACE(ethernet_tx_if, i_eth));
+                       CLIENT_INTERFACE(ethernet_tx_if, i_eth),
+                       CLIENT_INTERFACE(uart_tx_buffered_if ?, i_uart));
+
 void acmp_send_response(int message_type,
                         avb_1722_1_acmp_cmd_resp *alias response,
                         int status,
-                        CLIENT_INTERFACE(ethernet_tx_if, i_eth));
+                        CLIENT_INTERFACE(ethernet_tx_if, i_eth),
+                        CLIENT_INTERFACE(uart_tx_buffered_if ?, i_uart));
 
 #ifdef __XC__
 extern "C" {
 #endif
 void avb_1722_1_create_acmp_packet(avb_1722_1_acmp_cmd_resp *cr, int message_type, int status);
 void process_avb_1722_1_acmp_packet(avb_1722_1_acmp_packet_t *pkt,
-                                    CLIENT_INTERFACE(ethernet_tx_if, i_eth));
+                                    CLIENT_INTERFACE(ethernet_tx_if, i_eth),
+                                    CLIENT_INTERFACE(uart_tx_buffered_if ?, i_uart));
 avb_1722_1_acmp_inflight_command *acmp_remove_inflight(int entity_type);
 #ifdef __XC__
 }
@@ -209,9 +221,11 @@ void acmp_controller_connect_disconnect(int message_type,
                                         const_guid_ref_t listener_guid,
                                         int talker_id,
                                         int listener_id,
-                                        CLIENT_INTERFACE(ethernet_tx_if, i_eth));
+                                        CLIENT_INTERFACE(ethernet_tx_if, i_eth),
+                                        CLIENT_INTERFACE(uart_tx_buffered_if ?, i_uart));
 
-void acmp_start_fast_connect(CLIENT_INTERFACE(ethernet_tx_if, i_eth));
+void acmp_start_fast_connect(CLIENT_INTERFACE(ethernet_tx_if, i_eth),
+                             CLIENT_INTERFACE(uart_tx_buffered_if ?, i_uart));
 
 #ifdef __XC__
 extern "C" {

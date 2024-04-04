@@ -80,7 +80,7 @@ void avb_leave_vlan(int vlan) {
     }
 }
 
-int avb_mvrp_merge_message(char *buf, mrp_attribute_state *st, int vector) {
+int avb_mvrp_merge_message(uint8_t *buf, mrp_attribute_state *st, int vector) {
     mrp_msg_header *mrp_hdr = (mrp_msg_header *)buf;
     mrp_vector_header *hdr = (mrp_vector_header *)(buf + sizeof(mrp_msg_header));
     int merge = 0;
@@ -110,7 +110,7 @@ int avb_mvrp_merge_message(char *buf, mrp_attribute_state *st, int vector) {
     return merge;
 }
 
-int avb_mvrp_match_vid_vector(mrp_attribute_state *attr, char *fv, int i) {
+int avb_mvrp_match_vid_vector(mrp_attribute_state *attr, uint8_t *fv, int i) {
 
     int vlan;
     int *my_vlan = (int *)attr->attribute_info;

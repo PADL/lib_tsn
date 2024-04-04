@@ -55,11 +55,11 @@ void avb_mvrp_init(void);
 #ifndef __XC__
 
 //! Callback because MRP is merging some attributes into a Tx packet
-int avb_mvrp_merge_message(char *buf, mrp_attribute_state *st, int vector);
+int avb_mvrp_merge_message(uint8_t *buf, mrp_attribute_state *st, int vector);
 
 //! Callback when the MRP module is checking whether an atribute matches
 //! something that we are looking for
-int avb_mvrp_match_vid_vector(mrp_attribute_state *attr, char *msg, int i);
+int avb_mvrp_match_vid_vector(mrp_attribute_state *attr, uint8_t *msg, int i);
 
 //!@{
 //! \name Indications from the MRP state machine

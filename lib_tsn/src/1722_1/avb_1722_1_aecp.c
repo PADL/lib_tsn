@@ -90,6 +90,7 @@ static uint8_t unsolicited_notification_controller_macs[AVB_1722_1_MAX_NOTIFICAT
 static uint16_t unsolicited_sequence_id = -1;
 
 static void send_unsolicited_notifications(CLIENT_INTERFACE(ethernet_tx_if, i_eth),
+                                           CLIENT_INTERFACE(uart_tx_buffered_if ?, i_uart),
                                            size_t num_tx_bytes);
 
 // Called on startup to initialise certain static descriptor fields
@@ -454,7 +455,8 @@ static uint16_t avb_1722_1_create_acquire_response_packet(uint8_t status) {
 static uint16_t process_aem_cmd_acquire(avb_1722_1_aecp_packet_t *pkt,
                                         uint8_t *status,
                                         uint8_t src_addr[MACADDR_NUM_BYTES],
-                                        CLIENT_INTERFACE(ethernet_tx_if, i_eth)) {
+                                        CLIENT_INTERFACE(ethernet_tx_if, i_eth),
+                                        CLIENT_INTERFACE(uart_tx_buffered_if ?, i_uart)) {
     uint16_t descriptor_index = ntoh_16(pkt->data.aem.command.acquire_entity_cmd.descriptor_id);
     uint16_t descriptor_type = ntoh_16(pkt->data.aem.command.acquire_entity_cmd.descriptor_type);
 
@@ -513,7 +515,7 @@ static uint16_t process_aem_cmd_acquire(avb_1722_1_aecp_packet_t *pkt,
                     aecp_controller_available_sequence++;
 
                     avb_1722_1_create_controller_available_packet();
-                    eth_send_packet(i_eth, (char *)avb_1722_1_buf, 64, ETHERNET_ALL_INTERFACES);
+                    eth_uart_send_packet(i_eth, i_uart, (uint8_t *)avb_1722_1_buf, 64, ETHERNET_ALL_INTERFACES);
 
                     start_avb_timer(&aecp_aem_controller_available_timer, 12);
                     aecp_aem_controller_available_state = AECP_AEM_CONTROLLER_AVAILABLE_IN_A;
@@ -547,6 +549,7 @@ static int process_aem_cmd_start_abort_operation(avb_1722_1_aecp_packet_t *pkt,
                                                  uint8_t *status,
                                                  uint16_t command_type,
                                                  CLIENT_INTERFACE(ethernet_tx_if, i_eth),
+                                                 CLIENT_INTERFACE(uart_tx_buffered_if ?, i_uart),
                                                  uint8_t *reboot) {
     avb_1722_1_aem_start_operation_t *cmd =
         (avb_1722_1_aem_start_operation_t *)(pkt->data.aem.command.payload);
@@ -592,8 +595,8 @@ static int process_aem_cmd_start_abort_operation(avb_1722_1_aecp_packet_t *pkt,
                         avb_1722_1_create_aecp_aem_response(src_addr, AECP_AEM_STATUS_IN_PROGRESS,
                                                             GET_1722_1_DATALENGTH(&pkt->header),
                                                             pkt);
-                        eth_send_packet(i_eth, (char *)avb_1722_1_buf, num_tx_bytes,
-                                        ETHERNET_ALL_INTERFACES);
+                        eth_uart_send_packet(i_eth, i_uart, (uint8_t *)avb_1722_1_buf, num_tx_bytes,
+                                             ETHERNET_ALL_INTERFACES);
                     }
                 } while (result > 0);
 
@@ -607,7 +610,7 @@ static int process_aem_cmd_start_abort_operation(avb_1722_1_aecp_packet_t *pkt,
 
             avb_1722_1_create_aecp_aem_response(src_addr, *status,
                                                 GET_1722_1_DATALENGTH(&pkt->header), pkt);
-            eth_send_packet(i_eth, (char *)avb_1722_1_buf, num_tx_bytes, ETHERNET_ALL_INTERFACES);
+            eth_uart_send_packet(i_eth, i_uart, (uint8_t *)avb_1722_1_buf, num_tx_bytes, ETHERNET_ALL_INTERFACES);
 
             return 0;
             break;
@@ -618,7 +621,7 @@ static int process_aem_cmd_start_abort_operation(avb_1722_1_aecp_packet_t *pkt,
 
             avb_1722_1_create_aecp_aem_response(src_addr, AECP_AEM_STATUS_SUCCESS,
                                                 GET_1722_1_DATALENGTH(&pkt->header), pkt);
-            eth_send_packet(i_eth, (char *)avb_1722_1_buf, num_tx_bytes, ETHERNET_ALL_INTERFACES);
+            eth_uart_send_packet(i_eth, i_uart, (uint8_t *)avb_1722_1_buf, num_tx_bytes, ETHERNET_ALL_INTERFACES);
 
             avb_1722_1_aecp_aem_msg_t *aem_msg = &(pkt->data.aem);
             AEM_MSG_SET_U_FLAG(aem_msg, 1);
@@ -629,7 +632,7 @@ static int process_aem_cmd_start_abort_operation(avb_1722_1_aecp_packet_t *pkt,
             hton_16(resp->percent_complete, 1000);
             avb_1722_1_create_aecp_aem_response(src_addr, AECP_AEM_STATUS_SUCCESS,
                                                 GET_1722_1_DATALENGTH(&pkt->header), pkt);
-            eth_send_packet(i_eth, (char *)avb_1722_1_buf, num_tx_bytes, ETHERNET_ALL_INTERFACES);
+            eth_uart_send_packet(i_eth, i_uart, (uint8_t *)avb_1722_1_buf, num_tx_bytes, ETHERNET_ALL_INTERFACES);
 
             if (operation_type == AEM_MEMORY_OBJECT_OPERATION_STORE_AND_REBOOT) {
                 *reboot = 1;
@@ -711,6 +714,7 @@ static void process_avb_1722_1_aecp_aem_msg(avb_1722_1_aecp_packet_t *pkt,
                                             int message_type,
                                             int num_pkt_bytes,
                                             CLIENT_INTERFACE(ethernet_tx_if, i_eth),
+                                            CLIENT_INTERFACE(uart_tx_buffered_if ?, i_uart),
                                             CLIENT_INTERFACE(avb_interface, i_avb_api),
                                             CLIENT_INTERFACE(avb_1722_1_control_callbacks,
                                                              i_1722_1_entity),
@@ -729,7 +733,7 @@ static void process_avb_1722_1_aecp_aem_msg(avb_1722_1_aecp_packet_t *pkt,
         case AECP_AEM_CMD_ACQUIRE_ENTITY: // Long term exclusive control of the
                                           // entity
         {
-            cd_len = process_aem_cmd_acquire(pkt, &status, src_addr, i_eth);
+            cd_len = process_aem_cmd_acquire(pkt, &status, src_addr, i_eth, i_uart);
             break;
         }
         case AECP_AEM_CMD_LOCK_ENTITY: // Atomic operation on the entity
@@ -759,7 +763,7 @@ static void process_avb_1722_1_aecp_aem_msg(avb_1722_1_aecp_packet_t *pkt,
             if (num_tx_bytes < 64)
                 num_tx_bytes = 64;
 
-            eth_send_packet(i_eth, (char *)avb_1722_1_buf, num_tx_bytes, ETHERNET_ALL_INTERFACES);
+            eth_uart_send_packet(i_eth, i_uart, (uint8_t *)avb_1722_1_buf, num_tx_bytes, ETHERNET_ALL_INTERFACES);
 
             break;
         }
@@ -845,7 +849,7 @@ static void process_avb_1722_1_aecp_aem_msg(avb_1722_1_aecp_packet_t *pkt,
         case AECP_AEM_CMD_ABORT_OPERATION: {
             if (AVB_1722_1_FIRMWARE_UPGRADE_ENABLED) {
                 cd_len = process_aem_cmd_start_abort_operation(pkt, src_addr, &status, command_type,
-                                                               i_eth, &reboot);
+                                                               i_eth, i_uart, &reboot);
             }
             break;
         }
@@ -859,7 +863,7 @@ static void process_avb_1722_1_aecp_aem_msg(avb_1722_1_aecp_packet_t *pkt,
                     src_addr, status, AECP_CMD_AEM_COMMAND, GET_1722_1_DATALENGTH(&pkt->header),
                     pkt);
             memcpy(aem, pkt->data.payload, num_pkt_bytes - AVB_1722_1_AECP_PAYLOAD_OFFSET);
-            eth_send_packet(i_eth, (char *)avb_1722_1_buf, num_tx_bytes, ETHERNET_ALL_INTERFACES);
+            eth_uart_send_packet(i_eth, i_uart, (uint8_t *)avb_1722_1_buf, num_tx_bytes, ETHERNET_ALL_INTERFACES);
             return;
         }
         }
@@ -899,15 +903,15 @@ static void process_avb_1722_1_aecp_aem_msg(avb_1722_1_aecp_packet_t *pkt,
 
     if (cd_len > 0) {
         size_t num_tx_bytes = calculate_num_tx_bytes(cd_len);
-        eth_send_packet(i_eth, (char *)avb_1722_1_buf, num_tx_bytes, ETHERNET_ALL_INTERFACES);
+        eth_uart_send_packet(i_eth, i_uart, (uint8_t *)avb_1722_1_buf, num_tx_bytes, ETHERNET_ALL_INTERFACES);
 
         // then send to all notifiers
         if (status == AECP_AEM_STATUS_SUCCESS && is_notifiable_command_type_p(command_type)) {
-            send_unsolicited_notifications(i_eth, num_tx_bytes);
+            send_unsolicited_notifications(i_eth, i_uart, num_tx_bytes);
         }
     }
     if (reboot) {
-        avb_1722_1_adp_depart_immediately(i_eth);
+        avb_1722_1_adp_depart_immediately(i_eth, i_uart);
         waitfor(10000); // Wait for the response packet to egress
         device_reboot();
     }
@@ -917,7 +921,8 @@ static void process_avb_1722_1_aecp_address_access_cmd(avb_1722_1_aecp_packet_t 
                                                        uint8_t src_addr[MACADDR_NUM_BYTES],
                                                        int message_type,
                                                        int num_pkt_bytes,
-                                                       CLIENT_INTERFACE(ethernet_tx_if, i_eth)) {
+                                                       CLIENT_INTERFACE(ethernet_tx_if, i_eth),
+                                                       CLIENT_INTERFACE(uart_tx_buffered_if ?, i_uart)) {
     avb_1722_1_aecp_address_access_t *aa_cmd = &(pkt->data.address);
     int tlv_count = ntoh_16(aa_cmd->tlv_count);
     unsigned int address = ntoh_32(&aa_cmd->address[4]);
@@ -987,13 +992,14 @@ static void process_avb_1722_1_aecp_address_access_cmd(avb_1722_1_aecp_packet_t 
 
     if (num_tx_bytes < 64)
         num_tx_bytes = 64;
-    eth_send_packet(i_eth, (char *)avb_1722_1_buf, num_tx_bytes, ETHERNET_ALL_INTERFACES);
+    eth_uart_send_packet(i_eth, i_uart, (uint8_t *)avb_1722_1_buf, num_tx_bytes, ETHERNET_ALL_INTERFACES);
 }
 
 void process_avb_1722_1_aecp_packet(uint8_t src_addr[MACADDR_NUM_BYTES],
                                     avb_1722_1_aecp_packet_t *pkt,
                                     int num_pkt_bytes,
                                     CLIENT_INTERFACE(ethernet_tx_if, i_eth),
+                                    CLIENT_INTERFACE(uart_tx_buffered_if ?, i_uart),
                                     CLIENT_INTERFACE(avb_interface, i_avb),
                                     CLIENT_INTERFACE(avb_1722_1_control_callbacks, i_1722_1_entity),
                                     chanend c_ptp) {
@@ -1003,7 +1009,7 @@ void process_avb_1722_1_aecp_packet(uint8_t src_addr[MACADDR_NUM_BYTES],
     case AECP_CMD_AEM_COMMAND:
     case AECP_CMD_AEM_RESPONSE: {
         if (AVB_1722_1_AEM_ENABLED) {
-            process_avb_1722_1_aecp_aem_msg(pkt, src_addr, message_type, num_pkt_bytes, i_eth,
+            process_avb_1722_1_aecp_aem_msg(pkt, src_addr, message_type, num_pkt_bytes, i_eth, i_uart,
                                             i_avb, i_1722_1_entity, c_ptp);
         }
         break;
@@ -1011,7 +1017,7 @@ void process_avb_1722_1_aecp_packet(uint8_t src_addr[MACADDR_NUM_BYTES],
     case AECP_CMD_ADDRESS_ACCESS_COMMAND: {
         if (AVB_1722_1_FIRMWARE_UPGRADE_ENABLED) {
             process_avb_1722_1_aecp_address_access_cmd(pkt, src_addr, message_type, num_pkt_bytes,
-                                                       i_eth);
+                                                       i_eth, i_uart);
         }
         break;
     }
@@ -1030,7 +1036,8 @@ void process_avb_1722_1_aecp_packet(uint8_t src_addr[MACADDR_NUM_BYTES],
     }
 }
 
-void avb_1722_1_aecp_aem_periodic(CLIENT_INTERFACE(ethernet_tx_if, i_eth)) {
+void avb_1722_1_aecp_aem_periodic(CLIENT_INTERFACE(ethernet_tx_if, i_eth),
+                                  CLIENT_INTERFACE(uart_tx_buffered_if ?, i_uart)) {
     char available_timeouts[5] = {12, 1, 11, 12, 2};
     if (avb_timer_expired(&aecp_aem_controller_available_timer)) {
         int cd_len = 0;
@@ -1091,7 +1098,7 @@ void avb_1722_1_aecp_aem_periodic(CLIENT_INTERFACE(ethernet_tx_if, i_eth)) {
                 num_tx_bytes = 64;
             }
 
-            eth_send_packet(i_eth, (char *)avb_1722_1_buf, num_tx_bytes, ETHERNET_ALL_INTERFACES);
+            eth_uart_send_packet(i_eth, i_uart, (uint8_t *)avb_1722_1_buf, num_tx_bytes, ETHERNET_ALL_INTERFACES);
         }
     }
 }
@@ -1186,6 +1193,7 @@ static void process_aem_cmd_deregister_unsolicited_notification(avb_1722_1_aecp_
 }
 
 static void send_unsolicited_notifications(CLIENT_INTERFACE(ethernet_tx_if, i_eth),
+                                           CLIENT_INTERFACE(uart_tx_buffered_if ?, i_uart),
                                            size_t num_tx_bytes) {
     struct ethernet_hdr_t *hdr = (ethernet_hdr_t *)&avb_1722_1_buf[0];
     avb_1722_1_aecp_packet_t *pkt =
@@ -1205,7 +1213,7 @@ static void send_unsolicited_notifications(CLIENT_INTERFACE(ethernet_tx_if, i_et
                sizeof(requesting_controller_guid)) != 0) {
         hton_guid(pkt->controller_guid, &acquired_controller_guid);
         memcpy(hdr->dest_addr, acquired_controller_mac, MACADDR_NUM_BYTES);
-        eth_send_packet(i_eth, (char *)avb_1722_1_buf, num_tx_bytes, ETHERNET_ALL_INTERFACES);
+        eth_uart_send_packet(i_eth, i_uart, (uint8_t *)avb_1722_1_buf, num_tx_bytes, ETHERNET_ALL_INTERFACES);
 #if AVB_1722_1_AECP_DEBUG_NOTIFICATIONS
         debug_printf("send_unsolicited_notifications: notified 1722.1 "
                      "acquiring controller %08x:%08x for command %u\n",
@@ -1225,7 +1233,7 @@ static void send_unsolicited_notifications(CLIENT_INTERFACE(ethernet_tx_if, i_et
 
         hton_guid(pkt->controller_guid, &unsolicited_notification_controllers[i]);
         memcpy(hdr->dest_addr, unsolicited_notification_controller_macs[i], MACADDR_NUM_BYTES);
-        eth_send_packet(i_eth, (char *)avb_1722_1_buf, num_tx_bytes, ETHERNET_ALL_INTERFACES);
+        eth_uart_send_packet(i_eth, i_uart, (uint8_t *)avb_1722_1_buf, num_tx_bytes, ETHERNET_ALL_INTERFACES);
 #if AVB_1722_1_AECP_DEBUG_NOTIFICATIONS
         debug_printf("send_unsolicited_notifications[%d]: notified 1722.1 "
                      "controller %08x:%08x for command %u\n",
@@ -1239,6 +1247,7 @@ void send_unsolicited_notifications_state_changed(uint16_t command_type,
                                                   uint16_t stream_desc_type, // for AECP_AEM_CMD_GET_STREAM_INFO
                                                   uint16_t stream_desc_id, // for AECP_AEM_CMD_GET_STREAM_INFO
                                                   CLIENT_INTERFACE(ethernet_tx_if, i_eth),
+                                                  CLIENT_INTERFACE(uart_tx_buffered_if ?, i_uart),
                                                   CLIENT_INTERFACE(avb_interface, i_avb_api),
                                                   chanend c_ptp) {
     avb_1722_1_aecp_packet_t pkt;
@@ -1289,5 +1298,5 @@ void send_unsolicited_notifications_state_changed(uint16_t command_type,
         return;
 
     size_t num_tx_bytes = calculate_num_tx_bytes(cd_len);
-    send_unsolicited_notifications(i_eth, num_tx_bytes);
+    send_unsolicited_notifications(i_eth, i_uart, num_tx_bytes);
 }

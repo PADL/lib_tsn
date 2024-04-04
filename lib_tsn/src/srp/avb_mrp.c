@@ -1,5 +1,6 @@
 // Copyright (c) 2011-2017, XMOS Ltd, All rights reserved
 #include <xs1.h>
+#include <inttypes.h>
 #include "avb_mrp.h"
 #include "avb_srp.h"
 #include "avb_mvrp.h"
@@ -38,7 +39,7 @@ uint8_t srp_dest_mac[6] = AVB_SRP_MACADDR;
 
 //! Buffer for constructing MRPDUs.  Note: It doesn't necessarily have to be
 //! this big, we could always make it shorter and just send more packets.
-static char send_buf[MRP_SEND_BUFFER_SIZE];
+static uint8_t send_buf[MRP_SEND_BUFFER_SIZE];
 
 //! Array of attribute control structures
 static mrp_attribute_state attrs[MRP_MAX_ATTRS];
@@ -49,7 +50,7 @@ static mrp_attribute_state attrs[MRP_MAX_ATTRS];
 static mrp_attribute_state *first_attr = &attrs[0];
 
 //! The end of the under-construction MRP packet
-static char *send_ptr = &send_buf[0] + sizeof(mrp_ethernet_hdr) + sizeof(mrp_header);
+static uint8_t *send_ptr = &send_buf[0] + sizeof(mrp_ethernet_hdr) + sizeof(mrp_header);
 
 //! The ethertype of the packet under construction - we could probably eliminate
 //! this since the information is in the packet anyway
@@ -136,13 +137,13 @@ unsigned attribute_list_length(mrp_msg_header *hdr) {
 // protocols that do not contain these fields.
 static void strip_attribute_list_length_fields() {
     if (current_etype != AVB_SRP_ETHERTYPE) {
-        char *msg = &send_buf[0] + sizeof(mrp_ethernet_hdr) + sizeof(mrp_header);
-        char *end = send_ptr;
+        uint8_t *msg = &send_buf[0] + sizeof(mrp_ethernet_hdr) + sizeof(mrp_header);
+        uint8_t *end = send_ptr;
         while (msg < end && (msg[0] != 0 || msg[1] != 0)) {
             mrp_msg_header *hdr = (mrp_msg_header *)msg;
-            char *next = (char *)(hdr + 1) + attribute_list_length(hdr);
+            uint8_t *next = (uint8_t *)(hdr + 1) + attribute_list_length(hdr);
 
-            for (char *c = (char *)hdr->AttributeListLength; c < end - 2; ++c)
+            for (uint8_t *c = (uint8_t *)hdr->AttributeListLength; c < end - 2; ++c)
                 *c = *(c + 2);
 
             end -= 2;
@@ -156,8 +157,8 @@ static void strip_attribute_list_length_fields() {
 // that PDU has had all of the attributes that it is going to get,
 // or when adding an attribute has filled the PDU up.
 static void force_send(CLIENT_INTERFACE(ethernet_if, i_eth), int ifnum) {
-    char *buf = &send_buf[0];
-    char *ptr = send_ptr;
+    uint8_t *buf = &send_buf[0];
+    uint8_t *ptr = send_ptr;
 
     // Strip out attribute length fields for MMRP and MVRP
     strip_attribute_list_length_fields();
@@ -165,12 +166,12 @@ static void force_send(CLIENT_INTERFACE(ethernet_if, i_eth), int ifnum) {
     if (ptr != buf + sizeof(mrp_ethernet_hdr) + sizeof(mrp_header)) {
 
         // Check that the buffer is long enough for a valid ethernet packet
-        char *end = ptr + 4;
+        uint8_t *end = ptr + 4;
         if (end < buf + 64)
             end = buf + 64;
 
         // Pad with zero if necessary
-        for (char *p = ptr; p < end; p++)
+        for (uint8_t *p = ptr; p < end; p++)
             *p = 0;
 
         // Transmit
@@ -310,18 +311,18 @@ static int encode_three_packed(int event, int i, int vector) {
     return (vector + event);
 }
 
-void mrp_encode_three_packed_event(char *buf, int event, mrp_attribute_type attr) {
+void mrp_encode_three_packed_event(uint8_t *buf, int event, mrp_attribute_type attr) {
     mrp_msg_header *hdr = (mrp_msg_header *)buf;
     mrp_vector_header *vector_hdr = (mrp_vector_header *)(buf + sizeof(mrp_msg_header));
     int num_values = vector_hdr->NumberOfValuesLow;
     int first_value_length = first_value_lengths[attr];
-    char *vector = buf + sizeof(mrp_msg_header) + sizeof(mrp_vector_header) + first_value_length +
-                   num_values / 3;
+    uint8_t *vector = buf + sizeof(mrp_msg_header) + sizeof(mrp_vector_header) + first_value_length +
+                      num_values / 3;
     int shift_required = (num_values % 3 == 0);
     unsigned attr_list_length = attribute_list_length(hdr);
 
     if (shift_required) {
-        char *endmark;
+        uint8_t *endmark;
         if (send_ptr - vector > 0)
             memmove(vector + 1, vector, send_ptr - vector);
         send_ptr++;
@@ -344,18 +345,18 @@ static int encode_four_packed(int event, int i, int vector) {
     return (vector + event);
 }
 
-void mrp_encode_four_packed_event(char *buf, int event, mrp_attribute_type attr) {
+void mrp_encode_four_packed_event(uint8_t *buf, int event, mrp_attribute_type attr) {
     mrp_msg_header *hdr = (mrp_msg_header *)buf;
     mrp_vector_header *vector_hdr = (mrp_vector_header *)(buf + sizeof(mrp_msg_header));
     int num_values = vector_hdr->NumberOfValuesLow;
     int first_value_length = first_value_lengths[attr];
-    char *vector = buf + sizeof(mrp_msg_header) + sizeof(mrp_vector_header) + first_value_length +
-                   (num_values + 3) / 3 + num_values / 4;
+    uint8_t *vector = buf + sizeof(mrp_msg_header) + sizeof(mrp_vector_header) + first_value_length +
+                      (num_values + 3) / 3 + num_values / 4;
     int shift_required = (num_values % 4 == 0);
     unsigned attr_list_length = attribute_list_length(hdr);
 
     if (shift_required) {
-        char *endmark;
+        uint8_t *endmark;
         if (send_ptr - vector > 0)
             memmove(vector + 1, vector, send_ptr - vector);
         *vector = 0;
@@ -385,7 +386,7 @@ static void create_empty_msg(mrp_attribute_type attr, int leave_all) {
     int msg_length = hdr_length + attr_list_length;
 
     // clear message
-    memset((char *)hdr, 0, msg_length);
+    memset((uint8_t *)hdr, 0, msg_length);
 
     // Set the relevant fields
     hdr->AttributeType = encode_attr_type(attr);
@@ -398,7 +399,7 @@ static void create_empty_msg(mrp_attribute_type attr, int leave_all) {
     send_ptr += msg_length;
 }
 
-static int encode_msg(char *msg, mrp_attribute_state *st, int vector, unsigned int port_num) {
+static int encode_msg(uint8_t *msg, mrp_attribute_state *st, int vector, unsigned int port_num) {
     switch (st->attribute_type) {
     case MSRP_TALKER_ADVERTISE:
     case MSRP_TALKER_FAILED:
@@ -416,8 +417,8 @@ static int encode_msg(char *msg, mrp_attribute_state *st, int vector, unsigned i
 
 static void doTx(mrp_attribute_state *st, int vector, unsigned int port_num) {
     int merged = 0;
-    char *msg = &send_buf[0] + sizeof(mrp_ethernet_hdr) + sizeof(mrp_header);
-    char *end = send_ptr;
+    uint8_t *msg = &send_buf[0] + sizeof(mrp_ethernet_hdr) + sizeof(mrp_header);
+    uint8_t *end = send_ptr;
 
     while (!merged && msg < end && (*msg != 0 || *(msg + 1) != 0)) {
         mrp_msg_header *hdr = (mrp_msg_header *)&msg[0];
@@ -1307,7 +1308,7 @@ mrp_attribute_state *mrp_match_attribute_pair_by_stream_id(mrp_attribute_state *
 
 static int match_attribute_of_same_type(mrp_attribute_type attr_type,
                                         mrp_attribute_state *attr,
-                                        char *msg,
+                                        uint8_t *msg,
                                         int i,
                                         int three_packed_event,
                                         int four_packed_event,
@@ -1356,8 +1357,8 @@ static int decode_fourpacked(int vector, int i) {
 }
 
 void avb_mrp_process_packet(uint8_t *buf, int etype, int len, unsigned int port_num) {
-    char *end = (char *)&buf[0] + len;
-    char *msg = (char *)&buf[0] + sizeof(mrp_header);
+    uint8_t *end = (uint8_t *)&buf[0] + len;
+    uint8_t *msg = (uint8_t *)&buf[0] + sizeof(mrp_header);
     mrp_header *hdr = (mrp_header *)&buf[0];
     uint8_t protocol_version = hdr->ProtocolVersion;
 
@@ -1383,7 +1384,7 @@ void avb_mrp_process_packet(uint8_t *buf, int etype, int len, unsigned int port_
 
         while (msg < end && (msg[0] != 0 || msg[1] != 0)) {
             mrp_vector_header *vector_hdr = (mrp_vector_header *)msg;
-            char *first_value = msg + sizeof(mrp_vector_header);
+            uint8_t *first_value = msg + sizeof(mrp_vector_header);
             int numvalues = ((vector_hdr->LeaveAllEventNumberOfValuesHigh & 0x1f) << 8) +
                             (vector_hdr->NumberOfValuesLow);
             int leave_all = (vector_hdr->LeaveAllEventNumberOfValuesHigh & 0xe0) >> 5;

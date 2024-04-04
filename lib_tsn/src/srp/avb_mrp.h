@@ -170,9 +170,9 @@ mrp_attribute_state *mrp_match_attribute_pair_by_stream_id(mrp_attribute_state *
 
 int mrp_is_observer(mrp_attribute_state *st);
 
-void mrp_encode_three_packed_event(char *buf, int event, mrp_attribute_type attr);
+void mrp_encode_three_packed_event(uint8_t *buf, int event, mrp_attribute_type attr);
 
-void mrp_encode_four_packed_event(char *buf, int event, mrp_attribute_type attr);
+void mrp_encode_four_packed_event(uint8_t *buf, int event, mrp_attribute_type attr);
 
 mrp_attribute_state *mrp_get_attr(void);
 

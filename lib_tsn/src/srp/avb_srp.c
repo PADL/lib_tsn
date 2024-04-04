@@ -348,7 +348,7 @@ void avb_srp_map_leave(mrp_attribute_state *attr) {
 }
 
 int avb_srp_match_talker_advertise(
-    mrp_attribute_state *attr, char *fv, int i, int leave_all, int failed) {
+    mrp_attribute_state *attr, uint8_t *fv, int i, int leave_all, int failed) {
     avb_source_info_t *source_info = (avb_source_info_t *)attr->attribute_info;
     uint64_t stream_id = 0, my_stream_id = 0;
     srp_talker_failed_first_value *first_value = (srp_talker_failed_first_value *)fv;
@@ -423,7 +423,7 @@ int avb_srp_match_talker_advertise(
     return (my_stream_id == stream_id);
 }
 
-int avb_srp_match_listener(mrp_attribute_state *attr, char *fv, int i, int four_packed_event) {
+int avb_srp_match_listener(mrp_attribute_state *attr, uint8_t *fv, int i, int four_packed_event) {
     avb_sink_info_t *sink_info = (avb_sink_info_t *)attr->attribute_info;
     uint64_t stream_id = 0, my_stream_id = 0;
     srp_listener_first_value *first_value = (srp_listener_first_value *)fv;
@@ -448,7 +448,7 @@ int avb_srp_match_listener(mrp_attribute_state *attr, char *fv, int i, int four_
     return (my_stream_id == stream_id);
 }
 
-int avb_srp_match_domain(mrp_attribute_state *attr, char *fv, int i) {
+int avb_srp_match_domain(mrp_attribute_state *attr, uint8_t *fv, int i) {
     srp_domain_first_value *first_value = (srp_domain_first_value *)fv;
     uint8_t sr_class_id = first_value->SRclassID + i;
     uint8_t sr_class_priority = first_value->SRclassPriority + i;
@@ -758,7 +758,7 @@ short avb_srp_join_listener_attrs(unsigned int stream_id[2], short vlan_id) {
 }
 
 mrp_attribute_state *
-avb_srp_process_new_attribute_from_packet(int mrp_attribute_type, char *fv, int num, int port_num) {
+avb_srp_process_new_attribute_from_packet(int mrp_attribute_type, uint8_t *fv, int num, int port_num) {
     srp_talker_first_value *packet = (srp_talker_first_value *)fv;
     unsigned int pdu_streamId[2];
     avb_stream_entry *stream_ptr = NULL;
@@ -864,7 +864,7 @@ void avb_srp_talker_leave_ind(mrp_attribute_state *attr) {
     }
 }
 
-static int check_listener_firstvalue_merge(char *buf, avb_sink_info_t *sink_info) {
+static int check_listener_firstvalue_merge(uint8_t *buf, avb_sink_info_t *sink_info) {
     mrp_vector_header *hdr = (mrp_vector_header *)(buf + sizeof(mrp_msg_header));
     int num_values = hdr->NumberOfValuesLow;
     uint64_t stream_id = 0, my_stream_id = 0;
@@ -887,7 +887,7 @@ static int check_listener_firstvalue_merge(char *buf, avb_sink_info_t *sink_info
     return 1;
 }
 
-static int encode_listener_message(char *buf, mrp_attribute_state *st, int vector) {
+static int encode_listener_message(uint8_t *buf, mrp_attribute_state *st, int vector) {
     mrp_msg_header *mrp_hdr = (mrp_msg_header *)buf;
     mrp_vector_header *hdr = (mrp_vector_header *)(buf + sizeof(mrp_msg_header));
     int merge = 0;
@@ -969,12 +969,12 @@ void avb_srp_domain_leave_ind(CLIENT_INTERFACE(avb_interface, avb), mrp_attribut
     srp_domain_boundary_port[attr->port_num] = 1;
 }
 
-static int check_domain_firstvalue_merge(char *buf) {
+static int check_domain_firstvalue_merge(uint8_t *buf) {
     // We never both to merge domain attribute together
     return 0;
 }
 
-static int encode_domain_message(char *buf, mrp_attribute_state *st, int vector) {
+static int encode_domain_message(uint8_t *buf, mrp_attribute_state *st, int vector) {
     mrp_msg_header *mrp_hdr = (mrp_msg_header *)buf;
     mrp_vector_header *hdr = (mrp_vector_header *)(buf + sizeof(mrp_msg_header));
     int merge = 0;
@@ -1007,7 +1007,7 @@ static int encode_domain_message(char *buf, mrp_attribute_state *st, int vector)
     return merge;
 }
 
-static int check_talker_firstvalue_merge(char *buf, avb_source_info_t *source_info) {
+static int check_talker_firstvalue_merge(uint8_t *buf, avb_source_info_t *source_info) {
     mrp_vector_header *hdr = (mrp_vector_header *)(buf + sizeof(mrp_msg_header));
     int num_values = hdr->NumberOfValuesLow;
     uint64_t stream_id = 0, my_stream_id = 0;
@@ -1057,7 +1057,7 @@ static int check_talker_firstvalue_merge(char *buf, avb_source_info_t *source_in
     return 1;
 }
 
-static int encode_talker_message(char *buf, mrp_attribute_state *st, int vector) {
+static int encode_talker_message(uint8_t *buf, mrp_attribute_state *st, int vector) {
     mrp_msg_header *mrp_hdr = (mrp_msg_header *)buf;
     mrp_vector_header *hdr = (mrp_vector_header *)(buf + sizeof(mrp_msg_header));
     int merge = 0;
@@ -1139,7 +1139,7 @@ static int encode_talker_message(char *buf, mrp_attribute_state *st, int vector)
     return merge;
 }
 
-int avb_srp_encode_message(char *buf, mrp_attribute_state *st, int vector) {
+int avb_srp_encode_message(uint8_t *buf, mrp_attribute_state *st, int vector) {
     switch (st->attribute_type) {
     case MSRP_TALKER_ADVERTISE:
     case MSRP_TALKER_FAILED:

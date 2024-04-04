@@ -12,6 +12,7 @@
 #include "avb_1722_1_callbacks.h"
 #include "gptp.h"
 #include "audio_buffering.h"
+#include "uart.h"
 
 /** The audio format of a 1722 Talker or Listener */
 enum avb_stream_format_t {
@@ -1131,7 +1132,9 @@ void avb_1722_1_maap_task(otp_ports_t &?otp_ports,
                          client interface ethernet_rx_if i_eth_rx,
                          client interface ethernet_tx_if i_eth_tx,
                          client interface ethernet_cfg_if i_eth_cfg,
-                         chanend c_ptp);
+                         chanend c_ptp,
+                         client interface uart_rx_if ?i_uart_rx,
+                         client interface uart_tx_buffered_if ?i_uart_tx);
 
 /** A task that runs SRP, MAAP and 1722.1 ADP, ACMP and AECP protocols and
  * interacts with the rest of the AVB stack.
@@ -1155,7 +1158,9 @@ void avb_1722_1_maap_srp_task(client interface avb_interface i_avb,
                               client interface ethernet_tx_if i_eth_tx,
                               client interface ethernet_cfg_if i_eth_cfg,
                               chanend c_ptp,
-                              otp_ports_t &?otp_ports);
+                              otp_ports_t &?otp_ports,
+                              client interface uart_rx_if ?i_uart_rx,
+                              client interface uart_tx_buffered_if ?i_uart_tx);
 
 /** SRP task that implements MSRP and MVRP protocols. Can be combined with other
   combinable tasks.

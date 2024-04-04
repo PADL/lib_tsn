@@ -14,6 +14,7 @@
 #include "avb_1722_1_aecp_pdu.h"
 #include "avb_1722_1_callbacks.h"
 #include "ethernet.h"
+#include "ethernet_wrappers.h"
 
 typedef union {
     avb_1722_1_adp_packet_t adp;
@@ -41,7 +42,8 @@ void avb_1722_1_init(uint8_t macaddr[MACADDR_NUM_BYTES], unsigned int serial_num
  *  \param  i_avb       client interface of type avb_interface into
  * avb_manager()
  */
-void avb_1722_1_periodic(client interface ethernet_tx_if i_eth,
+void avb_1722_1_periodic(CLIENT_INTERFACE(ethernet_tx_if, i_eth),
+                         CLIENT_INTERFACE(uart_tx_buffered_if ?, i_uart),
                          chanend c_ptp,
                          client interface avb_interface i_avb);
 
@@ -58,7 +60,8 @@ void avb_1722_1_periodic(client interface ethernet_tx_if i_eth,
 void avb_1722_1_process_packet(uint8_t buf[len],
                                unsigned len,
                                uint8_t src_addr[MACADDR_NUM_BYTES],
-                               client interface ethernet_tx_if i_eth,
+                               CLIENT_INTERFACE(ethernet_tx_if, i_eth),
+                               CLIENT_INTERFACE(uart_tx_buffered_if ?, i_uart),
                                CLIENT_INTERFACE(avb_interface, i_avb_api),
                                CLIENT_INTERFACE(avb_1722_1_control_callbacks, i_1722_1_entity),
                                chanend c_ptp);

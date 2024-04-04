@@ -14,6 +14,7 @@
 #include "avb_1722_1_app_hooks.h"
 #include "avb_1722_def.h"
 #include "avb_1722_1.h"
+#include "ethernet_wrappers.h"
 
 /* Inflight command defines */
 #define CONTROLLER 0
@@ -287,29 +288,32 @@ void avb_1722_1_controller_connect(const_guid_ref_t talker_guid,
                                    const_guid_ref_t listener_guid,
                                    int talker_id,
                                    int listener_id,
-                                   CLIENT_INTERFACE(ethernet_if, i_eth)) {
+                                   CLIENT_INTERFACE(ethernet_tx_if, i_eth),
+                                   CLIENT_INTERFACE(uart_tx_buffered_if ?, i_uart)) {
     acmp_controller_connect_disconnect(ACMP_CMD_CONNECT_RX_COMMAND, talker_guid, listener_guid,
-                                       talker_id, listener_id, i_eth);
+                                       talker_id, listener_id, i_eth, i_uart);
 }
 
 void avb_1722_1_controller_disconnect(const_guid_ref_t talker_guid,
                                       const_guid_ref_t listener_guid,
                                       int talker_id,
                                       int listener_id,
-                                      CLIENT_INTERFACE(ethernet_if, i_eth)) {
+                                      CLIENT_INTERFACE(ethernet_tx_if, i_eth),
+                                      CLIENT_INTERFACE(uart_tx_buffered_if ?, i_uart)) {
     acmp_controller_connect_disconnect(ACMP_CMD_DISCONNECT_RX_COMMAND, talker_guid, listener_guid,
-                                       talker_id, listener_id, i_eth);
+                                       talker_id, listener_id, i_eth, i_uart);
 }
 
 void avb_1722_1_controller_disconnect_all_listeners(int talker_id,
-                                                    CLIENT_INTERFACE(ethernet_if, i_eth)) {
+                                                    CLIENT_INTERFACE(ethernet_tx_if, i_eth),
+                                                    CLIENT_INTERFACE(uart_tx_buffered_if ?, i_uart)) {
     if (acmp_talker_streams[talker_id].stream_id.l != 0) {
         if (acmp_talker_streams[talker_id].connection_count > 0) {
             for (int i = 0; i < AVB_1722_1_MAX_LISTENERS_PER_TALKER; i++) {
                 if (acmp_talker_streams[talker_id].connected_listeners[i].guid.l != 0) {
                     avb_1722_1_controller_disconnect(
                         &my_guid, &acmp_talker_streams[talker_id].connected_listeners[i].guid,
-                        talker_id, i, i_eth);
+                        talker_id, i, i_eth, i_uart);
                 }
             }
         }
@@ -317,12 +321,13 @@ void avb_1722_1_controller_disconnect_all_listeners(int talker_id,
 }
 
 void avb_1722_1_controller_disconnect_talker(int listener_id,
-                                             CLIENT_INTERFACE(ethernet_if, i_eth)) {
+                                             CLIENT_INTERFACE(ethernet_tx_if, i_eth),
+                                             CLIENT_INTERFACE(uart_tx_buffered_if ?, i_uart)) {
     if (acmp_listener_streams[listener_id].stream_id.l != 0) {
         if (acmp_listener_streams[listener_id].connected) {
             avb_1722_1_controller_disconnect(
                 &acmp_listener_streams[listener_id].talker_guid, &my_guid,
-                acmp_listener_streams[listener_id].talker_unique_id, listener_id, i_eth);
+                acmp_listener_streams[listener_id].talker_unique_id, listener_id, i_eth, i_uart);
         }
     }
 }
@@ -403,7 +408,8 @@ static int acmp_listener_read_fast_connect_info(uint8_t buffer[256]) {
     }
 }
 
-void acmp_start_fast_connect(CLIENT_INTERFACE(ethernet_tx_if, i_eth)) {
+void acmp_start_fast_connect(CLIENT_INTERFACE(ethernet_tx_if, i_eth),
+                             CLIENT_INTERFACE(uart_tx_buffered_if ?, i_uart)) {
     uint8_t flash_buf[256];
 
     if (acmp_listener_read_fast_connect_info(flash_buf) == 0) {
@@ -428,7 +434,7 @@ void acmp_start_fast_connect(CLIENT_INTERFACE(ethernet_tx_if, i_eth)) {
 
                 debug_printf("Issuing fast connect for %d\n", i);
                 acmp_send_command(LISTENER, ACMP_CMD_CONNECT_TX_COMMAND,
-                                  &acmp_listener_rcvd_cmd_resp, FALSE, -1, i_eth);
+                                  &acmp_listener_rcvd_cmd_resp, FALSE, -1, i_eth, i_uart);
             }
         }
     }
@@ -687,7 +693,8 @@ static void process_avb_1722_1_acmp_listener_packet(uint8_t message_type,
 }
 
 void process_avb_1722_1_acmp_packet(avb_1722_1_acmp_packet_t *pkt,
-                                    CLIENT_INTERFACE(ethernet_if, i_eth)) {
+                                    CLIENT_INTERFACE(ethernet_tx_if, i_eth),
+                                    CLIENT_INTERFACE(uart_tx_buffered_if ?, i_uart)) {
     uint8_t message_type = GET_1722_1_MSG_TYPE(((avb_1722_1_packet_header_t *)pkt));
 
     switch (message_type) {

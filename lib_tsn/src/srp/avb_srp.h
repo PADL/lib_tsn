@@ -57,7 +57,7 @@ int srp_cleanup_reservation_entry(mrp_event event, mrp_attribute_state *st);
 
 /* The following functions are called from avb_mrp.c */
 mrp_attribute_state *unsafe avb_srp_process_new_attribute_from_packet(int attribute_type,
-                                                                      char *fv,
+                                                                      uint8_t *fv,
                                                                       int num,
                                                                       int port_num);
 
@@ -65,14 +65,14 @@ int avb_srp_compare_talker_attributes(mrp_attribute_state *a, mrp_attribute_stat
 
 int avb_srp_compare_listener_attributes(mrp_attribute_state *a, mrp_attribute_state *b);
 
-int avb_srp_encode_message(char *buf, mrp_attribute_state *st, int vector);
+int avb_srp_encode_message(uint8_t *buf, mrp_attribute_state *st, int vector);
 
 int avb_srp_match_talker_advertise(
-    mrp_attribute_state *attr, char *msg, int i, int leave_all, int failed);
+    mrp_attribute_state *attr, uint8_t *msg, int i, int leave_all, int failed);
 
-int avb_srp_match_listener(mrp_attribute_state *attr, char *msg, int i, int four_packed_event);
+int avb_srp_match_listener(mrp_attribute_state *attr, uint8_t *msg, int i, int four_packed_event);
 
-int avb_srp_match_domain(mrp_attribute_state *attr, char *msg, int i);
+int avb_srp_match_domain(mrp_attribute_state *attr, uint8_t *msg, int i);
 
 void avb_srp_map_leave(mrp_attribute_state *attr);
 

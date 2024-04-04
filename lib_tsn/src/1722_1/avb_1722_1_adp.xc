@@ -246,7 +246,8 @@ static unsigned avb_1722_1_entity_database_check_timeout() {
 }
 
 void process_avb_1722_1_adp_packet(avb_1722_1_adp_packet_t &pkt,
-                                   client interface ethernet_tx_if i_eth) {
+                                   CLIENT_INTERFACE(ethernet_tx_if, i_eth),
+                                   CLIENT_INTERFACE(uart_tx_buffered_if ?, i_uart)) {
     unsigned message_type = GET_1722_1_MSG_TYPE(((avb_1722_1_packet_header_t *)&pkt));
     guid_t zero_guid = {0};
 
@@ -310,7 +311,8 @@ static void avb_1722_1_create_adp_packet(int message_type, guid_t guid) {
     }
 }
 
-void avb_1722_1_adp_discovery_periodic(client interface ethernet_tx_if i_eth,
+void avb_1722_1_adp_discovery_periodic(CLIENT_INTERFACE(ethernet_tx_if, i_eth),
+                                       CLIENT_INTERFACE(uart_tx_buffered_if ?, i_uart),
                                        client interface avb_interface avb_api) {
     switch (adp_discovery_state) {
     case ADP_DISCOVERY_IDLE:
@@ -330,8 +332,8 @@ void avb_1722_1_adp_discovery_periodic(client interface ethernet_tx_if i_eth,
     }
     case ADP_DISCOVERY_DISCOVER: {
         avb_1722_1_create_adp_packet(ENTITY_DISCOVER, discover_guid);
-        i_eth.send_packet((avb_1722_1_buf, uint8_t[]), AVB_1722_1_ADP_PACKET_SIZE,
-                          ETHERNET_ALL_INTERFACES);
+        eth_uart_send_packet(i_eth, i_uart, (avb_1722_1_buf, uint8_t[]), AVB_1722_1_ADP_PACKET_SIZE,
+                             ETHERNET_ALL_INTERFACES);
         adp_discovery_state = ADP_DISCOVERY_WAITING;
         break;
     }
@@ -350,13 +352,15 @@ void avb_1722_1_adp_discovery_periodic(client interface ethernet_tx_if i_eth,
     }
 }
 
-void avb_1722_1_adp_depart_immediately(client interface ethernet_tx_if i_eth) {
+void avb_1722_1_adp_depart_immediately(CLIENT_INTERFACE(ethernet_tx_if, i_eth),
+                                       CLIENT_INTERFACE(uart_tx_buffered_if ?, i_uart)) {
     avb_1722_1_create_adp_packet(ENTITY_DEPARTING, my_guid);
-    i_eth.send_packet((avb_1722_1_buf, uint8_t[]), AVB_1722_1_ADP_PACKET_SIZE,
-                      ETHERNET_ALL_INTERFACES);
+    eth_uart_send_packet(i_eth, i_uart, (avb_1722_1_buf, uint8_t[]), AVB_1722_1_ADP_PACKET_SIZE,
+                         ETHERNET_ALL_INTERFACES);
 }
 
-void avb_1722_1_adp_advertising_periodic(client interface ethernet_tx_if i_eth,
+void avb_1722_1_adp_advertising_periodic(CLIENT_INTERFACE(ethernet_tx_if, i_eth),
+                                         CLIENT_INTERFACE(uart_tx_buffered_if ?, i_uart),
                                          chanend ptp,
                                          client interface avb_interface i_avb_api) {
     guid_t ptp_current;
@@ -373,15 +377,15 @@ void avb_1722_1_adp_advertising_periodic(client interface ethernet_tx_if i_eth,
 
     case ADP_ADVERTISE_ADVERTISE_0:
         avb_1722_1_adp_change_ptp_grandmaster(ptp_current.c);
-        notify_avb_info_changed(i_eth, ptp, i_avb_api);
+        notify_avb_info_changed(i_eth, i_uart, ptp, i_avb_api);
         start_avb_timer(ptp_monitor_timer, 1); // Every second
         adp_advertise_state = ADP_ADVERTISE_ADVERTISE_1;
         [[fallthrough]];
 
     case ADP_ADVERTISE_ADVERTISE_1:
         avb_1722_1_create_adp_packet(ENTITY_AVAILABLE, my_guid);
-        i_eth.send_packet((avb_1722_1_buf, uint8_t[]), AVB_1722_1_ADP_PACKET_SIZE,
-                          ETHERNET_ALL_INTERFACES);
+        eth_uart_send_packet(i_eth, i_uart, (avb_1722_1_buf, uint8_t[]), AVB_1722_1_ADP_PACKET_SIZE,
+                             ETHERNET_ALL_INTERFACES);
 
         start_avb_timer(adp_readvertise_timer, AVB_1722_1_ADP_REPEAT_TIME);
         adp_advertise_state = ADP_ADVERTISE_WAITING;
@@ -391,8 +395,8 @@ void avb_1722_1_adp_advertising_periodic(client interface ethernet_tx_if i_eth,
     case ADP_ADVERTISE_DEPART_THEN_ADVERTISE:
     case ADP_ADVERTISE_DEPARTING:
         avb_1722_1_create_adp_packet(ENTITY_DEPARTING, my_guid);
-        i_eth.send_packet((avb_1722_1_buf, uint8_t[]), AVB_1722_1_ADP_PACKET_SIZE,
-                          ETHERNET_ALL_INTERFACES);
+        eth_uart_send_packet(i_eth, i_uart, (avb_1722_1_buf, uint8_t[]), AVB_1722_1_ADP_PACKET_SIZE,
+                             ETHERNET_ALL_INTERFACES);
 
         adp_advertise_state = (adp_advertise_state == ADP_ADVERTISE_DEPART_THEN_ADVERTISE)
                                   ? ADP_ADVERTISE_ADVERTISE_0
@@ -409,7 +413,7 @@ void avb_1722_1_adp_advertising_periodic(client interface ethernet_tx_if i_eth,
             ptp_get_current_grandmaster(ptp, ptp_current.c);
             if (gptp_grandmaster_id.l != ptp_current.l) {
                 avb_1722_1_adp_change_ptp_grandmaster(ptp_current.c);
-                notify_avb_info_changed(i_eth, ptp, i_avb_api);
+                notify_avb_info_changed(i_eth, i_uart, ptp, i_avb_api);
                 adp_advertise_state = ADP_ADVERTISE_ADVERTISE_1;
             }
             start_avb_timer(ptp_monitor_timer, 1); // Every second
