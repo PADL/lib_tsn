@@ -591,15 +591,23 @@ unsafe void process_aem_cmd_get_avb_info(avb_1722_1_aecp_packet_t *unsafe pkt,
         (avb_1722_1_aem_get_avb_info_response_t *)(pkt->data.aem.command.payload);
     uint16_t desc_id = ntoh_16(cmd->descriptor_id);
 
+    // FIXME: support multiple ports
     if (desc_id != 0) {
         status = AECP_AEM_STATUS_NO_SUCH_DESCRIPTOR;
         return;
     }
 
-    unsigned int pdelay;
+    ptp_port_info_t port_info;
     get_avb_ptp_gm(c_ptp, &cmd->as_grandmaster_id[0]);
-    get_avb_ptp_port_pdelay(c_ptp, 0, &pdelay);
-    hton_32(cmd->propagation_delay, pdelay);
+    get_avb_ptp_port_info(c_ptp, desc_id, &port_info);
+    hton_32(cmd->propagation_delay, port_info.delay_info.pdelay);
+    cmd->gptp_domain_number = 0;
+    cmd->flags = 0;
+    if (port_info.asCapable)
+        cmd->flags |= AEM_AVB_INFO_FLAGS_AS_CAPABLE;
+    if (port_info.role_state != PTP_DISABLED)
+        cmd->flags |= AEM_AVB_INFO_FLAGS_GPTP_ENABLED;
+    cmd->flags |= AEM_AVB_INFO_FLAGS_SRP_ENABLED;
     hton_16(cmd->msrp_mappings_count, 1);
     cmd->msrp_mappings[0] = AVB_SRP_SRCLASS_DEFAULT;
     cmd->msrp_mappings[1] = AVB_SRP_TSPEC_PRIORITY_DEFAULT;

@@ -19,7 +19,10 @@ void ptp_periodic(client interface ethernet_tx_if, unsigned);
 void ptp_get_reference_ptp_ts_mod_64(unsigned &hi, unsigned &lo);
 void ptp_current_grandmaster(char grandmaster[8]);
 void ptp_get_path_sequence(uint16_t port_num, uint16_t *count, n64_t pathSequence[PTP_MAXIMUM_PATH_TRACE_TLV]);
+
 ptp_port_role_t ptp_current_state(void);
+
+extern ptp_port_info_t ptp_port_info[PTP_NUM_PORTS];
 
 #define MAX_PTP_MESG_LENGTH (100 + (PTP_MAXIMUM_PATH_TRACE_TLV * 8))
 
@@ -149,6 +152,20 @@ void ptp_process_client_request(chanend c, timer ptp_timer) {
         c <: count;
         for (uint8_t i = 0; i < count; i++)
             c <: pathSequence[i];
+    }
+    break;
+  }
+  case PTP_GET_PORT_INFO: {
+    master {
+        uint16_t port_num;
+
+        c :> port_num;
+        if (port_num < PTP_NUM_PORTS) {
+            c <: ptp_port_info[port_num];
+        } else {
+            ptp_port_info_t port_info = { 0 };
+            c <: port_info;
+        }
     }
     break;
   }

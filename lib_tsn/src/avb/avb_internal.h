@@ -103,3 +103,6 @@ unsigned avb_get_sink_stream_index_from_stream_id(unsigned int stream_id[2]);
 
 int get_avb_ptp_gm(chanend ptp, uint8_t a0[8]);
 int get_avb_ptp_port_pdelay(chanend ptp, int srcport, unsigned *pdelay);
+
+struct ptp_port_info_t;
+int get_avb_ptp_port_info(chanend ptp, int srcport, struct ptp_port_info_t *port_info);

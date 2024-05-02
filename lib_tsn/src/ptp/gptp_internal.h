@@ -13,7 +13,8 @@ enum ptp_cmd_t {
     PTP_GET_GRANDMASTER,
     PTP_GET_STATE,
     PTP_GET_PDELAY,
-    PTP_GET_AS_PATH
+    PTP_GET_AS_PATH,
+    PTP_GET_PORT_INFO
 };
 
 typedef enum ptp_port_role_t { PTP_MASTER, PTP_UNCERTAIN, PTP_SLAVE, PTP_DISABLED } ptp_port_role_t;
@@ -56,6 +57,8 @@ void ptp_get_as_path(chanend ptp_server,
                      uint16_t *count);
 
 void ptp_get_current_grandmaster(chanend ptp_server, uint8_t grandmaster[8]);
+
+void ptp_get_port_info(chanend ptp_server, uint16_t port_num, ptp_port_info_t *port_info);
 
 /** Initialize the inline ptp server.
  *

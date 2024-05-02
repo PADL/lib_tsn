@@ -666,6 +666,15 @@ int get_avb_ptp_port_pdelay(chanend c_ptp, int srcport, unsigned *pdelay) {
     }
 }
 
+int get_avb_ptp_port_info(chanend ptp, int port_num, struct ptp_port_info_t *port_info) {
+    if (port_num < PTP_NUM_PORTS) {
+        ptp_get_port_info(ptp, port_num, port_info);
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
 unsigned avb_get_source_stream_index_from_stream_id(unsigned int stream_id[2]) {
     for (size_t i = 0; i < AVB_NUM_SOURCES; ++i) {
     if (stream_id[0] == sources[i].reservation.stream_id[0] &&

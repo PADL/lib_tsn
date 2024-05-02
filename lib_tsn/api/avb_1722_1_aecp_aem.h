@@ -166,10 +166,17 @@ typedef struct {
     uint8_t descriptor_id[2];
     uint8_t as_grandmaster_id[8];
     uint8_t propagation_delay[4];
-    uint8_t reserved[2];
+    uint8_t gptp_domain_number;
+    uint8_t flags;
     uint8_t msrp_mappings_count[2];
     uint8_t msrp_mappings[4];
 } avb_1722_1_aem_get_avb_info_response_t;
+
+#define AEM_AVB_INFO_FLAGS_AS_CAPABLE       0x01
+#define AEM_AVB_INFO_FLAGS_GPTP_ENABLED     0x02
+#define AEM_AVB_INFO_FLAGS_SRP_ENABLED      0x04
+#define AEM_AVB_INFO_FLAGS_AVTP_DOWN        0x08
+#define AEM_AVB_INFO_FLAGS_AVTP_DOWN_VALID  0x10
 
 /* 7.4.9.1 SET_STREAM_FORMAT Command/response */
 typedef struct {

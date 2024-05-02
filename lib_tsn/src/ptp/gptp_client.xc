@@ -105,3 +105,13 @@ void ptp_get_as_path(chanend ptp_server,
             ptp_server :> pathSequence[i];
     }
 }
+
+void ptp_get_port_info(chanend ptp_server,
+                       uint16_t port_num,
+                       ptp_port_info_t *port_info) {
+    send_cmd(ptp_server, PTP_GET_PORT_INFO);
+    slave {
+        ptp_server <: port_num;
+        ptp_server :> *port_info;
+    }
+}
