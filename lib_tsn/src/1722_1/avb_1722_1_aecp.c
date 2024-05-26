@@ -223,7 +223,7 @@ static int create_aem_read_descriptor_response(unsigned int read_type,
             desc_size_bytes = sizeof(aem_desc_audio_cluster_t);
         }
         break;
-#if (AVB_NUM_SOURCES > 0)
+#if (AVB_NUM_SINKS > 0)
     case AEM_STREAM_INPUT_TYPE:
         if (read_id < AVB_NUM_SINKS) {
             descriptor = &desc_stream_input_0[0];
