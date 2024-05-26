@@ -1402,16 +1402,16 @@ void ptp_current_grandmaster(char grandmaster[8]) {
 }
 
 void ptp_get_path_sequence(uint16_t port_num, uint16_t *count, n64_t pathSequence[PTP_MAXIMUM_PATH_TRACE_TLV]) {
-    int clock_identity_comp = compare_clock_identity_to_me(&best_announce_msg.grandmasterIdentity); // 0 if equal
+    int device_is_follower = !!compare_clock_identity_to_me(&best_announce_msg.grandmasterIdentity);
 
     *count = 0;
 
-    if (port_num >= PTP_NUM_PORTS || clock_identity_comp + steps_removed_from_gm + 1 > PTP_MAXIMUM_PATH_TRACE_TLV)
+    if (port_num >= PTP_NUM_PORTS || device_is_follower + steps_removed_from_gm + 1 > PTP_MAXIMUM_PATH_TRACE_TLV)
         return;
 
-    if (clock_identity_comp)
+    if (device_is_follower)
         memcpy(&pathSequence[0].data, best_announce_msg.grandmasterIdentity.data, 8);
-    memcpy(&pathSequence[clock_identity_comp].data, &best_announce_msg.pathSequence[0].data, steps_removed_from_gm * 8);
-    memcpy(&pathSequence[clock_identity_comp + steps_removed_from_gm].data, my_port_id.data, 8);
-    *count = clock_identity_comp + steps_removed_from_gm + 1;
+    memcpy(&pathSequence[device_is_follower].data, &best_announce_msg.pathSequence[0].data, steps_removed_from_gm * 8);
+    memcpy(&pathSequence[device_is_follower + steps_removed_from_gm].data, my_port_id.data, 8);
+    *count = device_is_follower + steps_removed_from_gm + 1;
 }
